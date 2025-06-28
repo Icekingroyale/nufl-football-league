@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { dataAPI, actionsAPI } from '../services/api';
 
-function Fixtures() {
+function Fixtures({ isAuthenticated = false }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({
     homeTeam: '',
@@ -137,12 +137,14 @@ function Fixtures() {
           <h1 className="text-3xl font-bold text-gray-900">Fixtures</h1>
           <p className="mt-2 text-gray-600">Manage match fixtures and results</p>
         </div>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-        >
-          {showAddForm ? 'Cancel' : 'Add New Fixture'}
-        </button>
+        {isAuthenticated && (
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          >
+            {showAddForm ? 'Cancel' : 'Add New Fixture'}
+          </button>
+        )}
       </div>
 
       {showAddForm && (
@@ -285,9 +287,11 @@ function Fixtures() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  {isAuthenticated && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -313,17 +317,19 @@ function Fixtures() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(fixture.status)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {fixture.status === 'scheduled' ? (
-                        <button className="text-green-600 hover:text-green-900">
-                          Update Result
-                        </button>
-                      ) : (
-                        <button className="text-blue-600 hover:text-blue-900">
-                          Edit
-                        </button>
-                      )}
-                    </td>
+                    {isAuthenticated && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        {fixture.status === 'scheduled' ? (
+                          <button className="text-green-600 hover:text-green-900">
+                            Update Result
+                          </button>
+                        ) : (
+                          <button className="text-blue-600 hover:text-blue-900">
+                            Edit
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

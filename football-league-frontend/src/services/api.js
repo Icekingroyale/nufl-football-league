@@ -13,7 +13,8 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Don't redirect for check_auth endpoint as 401 is expected when not authenticated
+    if (error.response?.status === 401 && !error.config.url.includes('/check_auth')) {
       // Unauthorized - redirect to login
       localStorage.removeItem('authToken');
       window.location.href = '/login';

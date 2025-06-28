@@ -45,9 +45,9 @@ function App() {
 
   const handleLogin = async (credentials) => {
     try {
-      await authAPI.login(credentials);
+      const response = await authAPI.login(credentials);
       setIsAuthenticated(true);
-      setUser(credentials.user);
+      setUser(response.data.user);
       return { success: true };
     } catch (error) {
       return { success: false, error: error.response?.data?.message || 'Login failed' };
@@ -81,7 +81,7 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
-            <Route path="/fixtures" element={<Fixtures />} />
+            <Route path="/fixtures" element={<Fixtures isAuthenticated={isAuthenticated} />} />
             <Route path="/results" element={<Results />} />
             <Route path="/tables" element={<Tables />} />
             <Route path="/stats" element={<Stats />} />
