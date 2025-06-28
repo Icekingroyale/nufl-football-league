@@ -17,6 +17,10 @@ import Clubs from './pages/Clubs';
 import Players from './pages/Players';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminTeams from './pages/AdminTeams';
+import AdminPlayers from './pages/AdminPlayers';
+import AdminFixtures from './pages/AdminFixtures';
+import AdminNews from './pages/AdminNews';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -99,6 +103,38 @@ function App() {
               element={
                 isAuthenticated ? 
                 <AdminDashboard /> : 
+                <Navigate to="/admin/login" replace />
+              } 
+            />
+            <Route 
+              path="/admin/teams" 
+              element={
+                isAuthenticated ? 
+                <AdminTeams /> : 
+                <Navigate to="/admin/login" replace />
+              } 
+            />
+            <Route 
+              path="/admin/players" 
+              element={
+                isAuthenticated ? 
+                <AdminPlayers /> : 
+                <Navigate to="/admin/login" replace />
+              } 
+            />
+            <Route 
+              path="/admin/fixtures" 
+              element={
+                isAuthenticated ? 
+                <AdminFixtures /> : 
+                <Navigate to="/admin/login" replace />
+              } 
+            />
+            <Route 
+              path="/admin/news" 
+              element={
+                isAuthenticated ? 
+                <AdminNews /> : 
                 <Navigate to="/admin/login" replace />
               } 
             />

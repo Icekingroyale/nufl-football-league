@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react';
-import { dataAPI } from '../services/api';
+import { Link } from 'react-router-dom';
+import { teamsAPI } from '../services/api';
 
-function AdminTeams() {
+const AdminTeams = () => {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editingTeam, setEditingTeam] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
+    university: '',
     city: '',
-    stadium: '',
     founded: '',
-    coach: ''
+    coach: '',
+    stadium: '',
+    logo_url: ''
   });
 
   useEffect(() => {
@@ -20,8 +23,7 @@ function AdminTeams() {
 
   const fetchTeams = async () => {
     try {
-      setLoading(true);
-      const response = await dataAPI.getTeams();
+      const response = await teamsAPI.getAllTeams();
       setTeams(response.data);
     } catch (error) {
       console.error('Error fetching teams:', error);
@@ -30,34 +32,20 @@ function AdminTeams() {
     }
   };
 
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (editingTeam) {
-        // Update existing team
-        await dataAPI.updateTeam(editingTeam.id, formData);
+        await teamsAPI.updateTeam(editingTeam.id, formData);
       } else {
-        // Add new team
-        await dataAPI.addTeam(formData);
+        await teamsAPI.createTeam(formData);
       }
-      
-      // Reset form and refresh data
-      setFormData({ name: '', city: '', stadium: '', founded: '', coach: '' });
-      setShowAddForm(false);
+      setShowForm(false);
       setEditingTeam(null);
-      await fetchTeams();
-      
-      alert(editingTeam ? 'Team updated successfully!' : 'Team added successfully!');
+      resetForm();
+      fetchTeams();
     } catch (error) {
       console.error('Error saving team:', error);
-      alert('Failed to save team. Please try again.');
     }
   };
 
@@ -65,232 +53,269 @@ function AdminTeams() {
     setEditingTeam(team);
     setFormData({
       name: team.name,
-      city: team.city || '',
-      stadium: team.stadium || '',
-      founded: team.founded || '',
-      coach: team.coach || ''
+      university: team.university,
+      city: team.city,
+      founded: team.founded,
+      coach: team.coach,
+      stadium: team.stadium,
+      logo_url: team.logo_url
     });
-    setShowAddForm(true);
+    setShowForm(true);
   };
 
   const handleDelete = async (teamId) => {
     if (window.confirm('Are you sure you want to delete this team?')) {
       try {
-        await dataAPI.deleteTeam(teamId);
-        await fetchTeams();
-        alert('Team deleted successfully!');
+        await teamsAPI.deleteTeam(teamId);
+        fetchTeams();
       } catch (error) {
         console.error('Error deleting team:', error);
-        alert('Failed to delete team. Please try again.');
       }
     }
   };
 
-  const cancelEdit = () => {
-    setFormData({ name: '', city: '', stadium: '', founded: '', coach: '' });
-    setShowAddForm(false);
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      university: '',
+      city: '',
+      founded: '',
+      coach: '',
+      stadium: '',
+      logo_url: ''
+    });
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
     setEditingTeam(null);
+    resetForm();
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Manage Teams</h1>
-              <p className="text-gray-600">Add, edit, and delete university teams</p>
-            </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Manage Teams</h1>
+            <p className="text-gray-600 mt-2">Add, edit, and delete teams in the league</p>
+          </div>
+          <Link
+            to="/admin/dashboard"
+            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            ← Back to Dashboard
+          </Link>
+        </div>
+
+        {!showForm && (
+          <div className="mb-6">
             <button
-              onClick={() => setShowAddForm(true)}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+              onClick={() => setShowForm(true)}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
             >
-              Add New Team
+              + Add New Team
             </button>
           </div>
-        </div>
-      </div>
+        )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Add/Edit Form */}
-        {showAddForm && (
+        {showForm && (
           <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <h2 className="text-xl font-semibold mb-4">
               {editingTeam ? 'Edit Team' : 'Add New Team'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                    Team Name *
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Team Name
                   </label>
                   <input
                     type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
                     required
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
                 <div>
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    University
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.university}
+                    onChange={(e) => setFormData({...formData, university: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     City
                   </label>
                   <input
                     type="text"
-                    id="city"
-                    name="city"
+                    required
                     value={formData.city}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                    onChange={(e) => setFormData({...formData, city: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
                 <div>
-                  <label htmlFor="stadium" className="block text-sm font-medium text-gray-700">
-                    Stadium
-                  </label>
-                  <input
-                    type="text"
-                    id="stadium"
-                    name="stadium"
-                    value={formData.stadium}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="founded" className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Founded Year
                   </label>
                   <input
                     type="number"
-                    id="founded"
-                    name="founded"
                     value={formData.founded}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                    onChange={(e) => setFormData({...formData, founded: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
                 <div>
-                  <label htmlFor="coach" className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Coach
                   </label>
                   <input
                     type="text"
-                    id="coach"
-                    name="coach"
                     value={formData.coach}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                    onChange={(e) => setFormData({...formData, coach: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Stadium
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.stadium}
+                    onChange={(e) => setFormData({...formData, stadium: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
               </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={cancelEdit}
-                  className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  Cancel
-                </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Logo URL
+                </label>
+                <input
+                  type="url"
+                  value={formData.logo_url}
+                  onChange={(e) => setFormData({...formData, logo_url: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="https://example.com/logo.png"
+                />
+              </div>
+              <div className="flex space-x-4">
                 <button
                   type="submit"
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
                 >
                   {editingTeam ? 'Update Team' : 'Add Team'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+                >
+                  Cancel
                 </button>
               </div>
             </form>
           </div>
         )}
 
-        {/* Teams List */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">All Teams</h3>
+            <h3 className="text-lg font-semibold text-gray-900">All Teams ({teams.length})</h3>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Team
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    City
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Stadium
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Founded
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Coach
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {teams.map((team) => (
-                  <tr key={team.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <img 
-                          src="https://via.placeholder.com/32x32/22c55e/ffffff?text=T" 
-                          alt={team.name}
-                          className="w-8 h-8 rounded-full mr-3"
-                        />
-                        <div className="text-sm font-medium text-gray-900">{team.name}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {team.city || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {team.stadium || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {team.founded || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {team.coach || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleEdit(team)}
-                        className="text-green-600 hover:text-green-900 mr-4"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(team.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
+          {teams.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              <p className="text-lg">No teams found. Add your first team to get started!</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Team
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      University
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      City
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Coach
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {teams.map((team) => (
+                    <tr key={team.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <img
+                              className="h-10 w-10 rounded-full object-cover"
+                              src={team.logo_url || 'https://via.placeholder.com/40x40?text=🏆'}
+                              alt={team.name}
+                            />
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">{team.name}</div>
+                            <div className="text-sm text-gray-500">{team.founded}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {team.university}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {team.city}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {team.coach}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => handleEdit(team)}
+                          className="text-blue-600 hover:text-blue-900 mr-4"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(team.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default AdminTeams; 
