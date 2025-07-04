@@ -1223,5 +1223,12 @@ def uploaded_file(filename):
     return send_from_directory('/opt/render/project/src/uploads', filename)
 
 if __name__ == '__main__':
-    init_db()
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000))) 
+    try:
+        init_db()
+        print("Database initialized successfully")
+    except Exception as e:
+        print(f"Database initialization error: {e}")
+    
+    port = int(os.environ.get('PORT', 5000))
+    print(f"Starting Flask app on port {port}")
+    app.run(host='0.0.0.0', port=port) 
