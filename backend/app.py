@@ -16,9 +16,15 @@ CORS(app,
      supports_credentials=True,
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
+# Database path helper
+def get_db_path():
+    return '/opt/render/project/src/football_league.db'
+
 # Database initialization
 def init_db():
-    conn = sqlite3.connect('football_league.db')
+    # Use persistent storage path on Render
+    db_path = get_db_path()
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
     # Drop existing tables to recreate with new schema
@@ -115,7 +121,7 @@ def init_db():
             ('Kevin Lee', 5, 'Midfielder', 7, 23, 'Nigerian', 174, 69, 'https://via.placeholder.com/100x100?text=KL'),
             ('James Taylor', 5, 'Defender', 5, 25, 'Nigerian', 183, 79, 'https://via.placeholder.com/100x100?text=JT')
         ]
-        cursor.executemany("INSERT INTO players (name, team_id, position, jersey_number, age, nationality, height, weight, photo_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", sample_players)
+        cursor.executemany("INSERT INTO players (name, team_id, position, jersey_number, age, nationality, height, weight, photo_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", sample_players)
         
         # Sample fixtures
         sample_fixtures = [
@@ -142,7 +148,8 @@ def init_db():
 
 # Helper function to get league table
 def get_league_table():
-    conn = sqlite3.connect('football_league.db')
+    db_path = get_db_path()
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
     cursor.execute("SELECT id, name FROM teams")
@@ -282,7 +289,7 @@ def api_check_auth():
 
 @app.route('/api/teams')
 def api_teams():
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     cursor.execute("""
@@ -313,7 +320,7 @@ def api_teams():
 
 @app.route('/api/players')
 def api_players():
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     cursor.execute("""
@@ -346,7 +353,7 @@ def api_players():
 
 @app.route('/api/fixtures')
 def api_fixtures():
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     cursor.execute("""
@@ -922,7 +929,7 @@ def api_update_fixture_result(fixture_id):
 # News CRUD API endpoints
 @app.route('/api/news', methods=['GET'])
 def api_get_all_news():
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     cursor.execute("SELECT * FROM news ORDER BY created_at DESC")
