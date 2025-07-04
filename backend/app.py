@@ -11,7 +11,10 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'fallback-secret-key')
 
 # Enable CORS for all routes
-CORS(app, supports_credentials=True)
+CORS(app, 
+     origins=["https://nufl.netlify.app", "http://localhost:5173", "http://localhost:3000"], 
+     supports_credentials=True,
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
 # Database initialization
 def init_db():
