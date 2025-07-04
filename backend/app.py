@@ -3,9 +3,12 @@ from flask_cors import CORS
 import sqlite3
 from datetime import datetime
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  # Change this in production
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'fallback-secret-key')
 
 # Enable CORS for all routes
 CORS(app, supports_credentials=True)
@@ -1221,4 +1224,4 @@ def uploaded_file(filename):
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True, host='0.0.0.0', port=5000) 
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000))) 
