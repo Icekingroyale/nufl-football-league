@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { teamsAPI } from '../services/api';
+import api from '../services/api';
 
 const AdminTeams = () => {
   const [teams, setTeams] = useState([]);
@@ -90,6 +91,22 @@ const AdminTeams = () => {
     setShowForm(false);
     setEditingTeam(null);
     resetForm();
+  };
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formDataImg = new FormData();
+    formDataImg.append('file', file);
+    try {
+      const response = await api.post('/upload', formDataImg, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setFormData({ ...formData, logo_url: response.data.url });
+    } catch (error) {
+      alert('Logo upload failed.');
+      console.error(error);
+    }
   };
 
   if (loading) {
@@ -203,18 +220,24 @@ const AdminTeams = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Logo URL
-                </label>
-                <input
-                  type="url"
-                  value={formData.logo_url}
-                  onChange={(e) => setFormData({...formData, logo_url: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder="https://example.com/logo.png"
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Team Logo
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                  {formData.logo_url && (
+                    <img
+                      src={formData.logo_url}
+                      alt="Team Logo Preview"
+                      className="mt-2 h-24 w-24 object-cover rounded-full border"
+                    />
+                  )}
+                </div>
               </div>
               <div className="flex space-x-4">
                 <button

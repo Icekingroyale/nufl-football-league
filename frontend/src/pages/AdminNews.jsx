@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { newsAPI } from '../services/api';
+import api from '../services/api';
 
 const AdminNews = () => {
   const [news, setNews] = useState([]);
@@ -104,6 +105,22 @@ const AdminNews = () => {
     return content.substring(0, maxLength) + '...';
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formDataImg = new FormData();
+    formDataImg.append('file', file);
+    try {
+      const response = await api.post('/upload', formDataImg, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setFormData({ ...formData, image_url: response.data.url });
+    } catch (error) {
+      alert('Image upload failed.');
+      console.error(error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -189,17 +206,23 @@ const AdminNews = () => {
                     <option value="General">General</option>
                   </select>
                 </div>
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Image URL
+                    News Image
                   </label>
                   <input
-                    type="url"
-                    value={formData.image_url}
-                    onChange={(e) => setFormData({...formData, image_url: e.target.value})}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                    placeholder="https://example.com/image.jpg"
                   />
+                  {formData.image_url && (
+                    <img
+                      src={formData.image_url}
+                      alt="News Image Preview"
+                      className="mt-2 h-24 w-24 object-cover rounded border"
+                    />
+                  )}
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">

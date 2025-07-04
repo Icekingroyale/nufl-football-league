@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react';
+import { dataAPI } from '../services/api';
 
 function Players() {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mock players data
-    setPlayers([
-      { id: 1, name: 'Ahmed Musa', team: 'University of Nigeria Nsukka', position: 'Forward', goals: 12, assists: 4, image: 'https://via.placeholder.com/64x64/22c55e/ffffff?text=AM' },
-      { id: 2, name: 'John Obi', team: 'University of Lagos', position: 'Midfielder', goals: 5, assists: 7, image: 'https://via.placeholder.com/64x64/3b82f6/ffffff?text=JO' },
-      { id: 3, name: 'Chinedu Eze', team: 'Nnamdi Azikiwe University', position: 'Forward', goals: 9, assists: 2, image: 'https://via.placeholder.com/64x64/ef4444/ffffff?text=CE' },
-      { id: 4, name: 'Samuel Okoro', team: 'Ebonyi State University', position: 'Defender', goals: 1, assists: 3, image: 'https://via.placeholder.com/64x64/10b981/ffffff?text=SO' },
-    ]);
-    setLoading(false);
+    async function fetchPlayers() {
+      try {
+        const response = await dataAPI.getPlayers();
+        setPlayers(response.data);
+      } catch (error) {
+        console.error('Error fetching players:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchPlayers();
   }, []);
 
   if (loading) {
@@ -38,16 +42,16 @@ function Players() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {players.map(player => (
             <div key={player.id} className="bg-white rounded-lg shadow-lg p-6 flex flex-col items-center hover:shadow-xl transition-shadow">
-              <img src={player.image} alt={player.name} className="w-16 h-16 rounded-full mb-4" />
+              <img src={player.photo_url || 'https://via.placeholder.com/64x64?text=No+Image'} alt={player.name} className="w-16 h-16 rounded-full mb-4 object-cover" />
               <h3 className="text-lg font-bold text-gray-900 mb-1">{player.name}</h3>
-              <div className="text-sm text-gray-500 mb-2">{player.position} - {player.team}</div>
+              <div className="text-sm text-gray-500 mb-2">{player.position} - {player.team_name || player.team}</div>
               <div className="flex space-x-4 mt-2">
                 <div className="text-center">
-                  <div className="text-green-600 font-bold text-lg">{player.goals}</div>
+                  <div className="text-green-600 font-bold text-lg">{player.goals ?? '-'}</div>
                   <div className="text-xs text-gray-500">Goals</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-blue-600 font-bold text-lg">{player.assists}</div>
+                  <div className="text-blue-600 font-bold text-lg">{player.assists ?? '-'}</div>
                   <div className="text-xs text-gray-500">Assists</div>
                 </div>
               </div>
