@@ -14,7 +14,8 @@ app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'fallback-secret-key')
 CORS(app, 
      origins=["https://nufl.netlify.app", "http://localhost:5173", "http://localhost:3000"], 
      supports_credentials=True,
-     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
 
 # Database path helper
 def get_db_path():
