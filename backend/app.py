@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory
+from flask import Flask, request, redirect, url_for, session, flash, jsonify, send_from_directory
 from flask_cors import CORS
 import sqlite3
 from datetime import datetime
@@ -197,190 +197,54 @@ def get_league_table():
 # Routes
 @app.route('/')
 def index():
-    if 'logged_in' not in session:
-        return redirect(url_for('login'))
-    
-    conn = sqlite3.connect('football_league.db')
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT f.id, t1.name as home_team, t2.name as away_team, f.date, f.home_score, f.away_score, f.status
-        FROM fixtures f
-        JOIN teams t1 ON f.home_team_id = t1.id
-        JOIN teams t2 ON f.away_team_id = t2.id
-        ORDER BY f.date DESC
-        LIMIT 5
-    """)
-    recent_fixtures = cursor.fetchall()
-    
-    league_table = get_league_table()
-    
-    conn.close()
-    
-    return render_template('index.html', recent_fixtures=recent_fixtures, league_table=league_table)
+    return jsonify({
+        'message': 'NUFL Football League API',
+        'status': 'running',
+        'endpoints': {
+            'players': '/api/players',
+            'teams': '/api/teams',
+            'fixtures': '/api/fixtures',
+            'news': '/api/news',
+            'league_table': '/api/league_table'
+        }
+    })
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        
-        if username == 'admin' and password == 'admin123':
-            session['logged_in'] = True
-            session['username'] = username
-            flash('Login successful!', 'success')
-            return redirect(url_for('index'))
-        else:
-            flash('Invalid credentials!', 'error')
-    
-    return render_template('login.html')
+    return jsonify({
+        'message': 'This is an API-only backend. Use the frontend for login.',
+        'frontend_url': 'https://your-frontend-url.com'
+    })
 
 @app.route('/logout')
 def logout():
-    session.clear()
-    flash('Logged out successfully!', 'success')
-    return redirect(url_for('login'))
+    return jsonify({
+        'message': 'This is an API-only backend. Use the frontend for logout.'
+    })
 
 @app.route('/teams')
 def teams():
-    if 'logged_in' not in session:
-        return redirect(url_for('login'))
-    
-    conn = sqlite3.connect('football_league.db')
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT t.id, t.name, t.city, t.founded, COUNT(p.id) as player_count
-        FROM teams t
-        LEFT JOIN players p ON t.id = p.team_id
-        GROUP BY t.id
-        ORDER BY t.name
-    """)
-    teams = cursor.fetchall()
-    
-    conn.close()
-    
-    return render_template('teams.html', teams=teams)
+    return redirect('/api/teams')
 
 @app.route('/players')
 def players():
-    if 'logged_in' not in session:
-        return redirect(url_for('login'))
-    
-    conn = sqlite3.connect('football_league.db')
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT p.id, p.name, t.name as team_name, p.position, p.jersey_number
-        FROM players p
-        LEFT JOIN teams t ON p.team_id = t.id
-        ORDER BY t.name, p.name
-    """)
-    players = cursor.fetchall()
-    
-    conn.close()
-    
-    return render_template('players.html', players=players)
+    return redirect('/api/players')
 
 @app.route('/fixtures')
 def fixtures():
-    if 'logged_in' not in session:
-        return redirect(url_for('login'))
-    
-    conn = sqlite3.connect('football_league.db')
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT f.id, t1.name as home_team, t2.name as away_team, f.date, f.home_score, f.away_score, f.status
-        FROM fixtures f
-        JOIN teams t1 ON f.home_team_id = t1.id
-        JOIN teams t2 ON f.away_team_id = t2.id
-        ORDER BY f.date DESC
-    """)
-    fixtures = cursor.fetchall()
-    
-    conn.close()
-    
-    return render_template('fixtures.html', fixtures=fixtures)
+    return redirect('/api/fixtures')
 
 @app.route('/add_fixture', methods=['GET', 'POST'])
 def add_fixture():
-    if 'logged_in' not in session:
-        return redirect(url_for('login'))
-    
-    if request.method == 'POST':
-        home_team_id = request.form['home_team_id']
-        away_team_id = request.form['away_team_id']
-        match_date = request.form['match_date']
-        
-        if home_team_id == away_team_id:
-            flash('Home and away teams cannot be the same!', 'error')
-        else:
-            conn = sqlite3.connect('football_league.db')
-            cursor = conn.cursor()
-            
-            cursor.execute("""
-                INSERT INTO fixtures (home_team_id, away_team_id, date, status)
-                VALUES (?, ?, ?, 'scheduled')
-            """, (home_team_id, away_team_id, match_date))
-            
-            conn.commit()
-            conn.close()
-            
-            flash('Fixture added successfully!', 'success')
-            return redirect(url_for('fixtures'))
-    
-    conn = sqlite3.connect('football_league.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name FROM teams ORDER BY name")
-    teams = cursor.fetchall()
-    conn.close()
-    
-    return render_template('add_fixture.html', teams=teams)
+    return jsonify({
+        'message': 'Use POST /api/fixtures to add a new fixture.'
+    })
 
 @app.route('/update_result/<int:fixture_id>', methods=['GET', 'POST'])
 def update_result(fixture_id):
-    if 'logged_in' not in session:
-        return redirect(url_for('login'))
-    
-    if request.method == 'POST':
-        home_score = request.form['home_score']
-        away_score = request.form['away_score']
-        
-        conn = sqlite3.connect('football_league.db')
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            UPDATE fixtures 
-            SET home_score = ?, away_score = ?, status = 'completed'
-            WHERE id = ?
-        """, (home_score, away_score, fixture_id))
-        
-        conn.commit()
-        conn.close()
-        
-        flash('Result updated successfully!', 'success')
-        return redirect(url_for('fixtures'))
-    
-    conn = sqlite3.connect('football_league.db')
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT f.id, t1.name as home_team, t2.name as away_team, f.date, f.home_score, f.away_score
-        FROM fixtures f
-        JOIN teams t1 ON f.home_team_id = t1.id
-        JOIN teams t2 ON f.away_team_id = t2.id
-        WHERE f.id = ?
-    """, (fixture_id,))
-    
-    fixture = cursor.fetchone()
-    conn.close()
-    
-    if not fixture:
-        flash('Fixture not found!', 'error')
-        return redirect(url_for('fixtures'))
-    
-    return render_template('update_result.html', fixture=fixture)
+    return jsonify({
+        'message': f'Use POST /api/fixtures/{fixture_id}/result to update fixture result.'
+    })
 
 @app.route('/api/league_table')
 def api_league_table():
