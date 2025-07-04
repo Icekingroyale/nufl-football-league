@@ -11,6 +11,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the code
 COPY . .
 
+# Create uploads directory in Render's persistent storage
+RUN mkdir -p /opt/render/project/src/uploads
+
 # Expose the port Flask runs on
 EXPOSE 5000
 

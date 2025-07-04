@@ -112,7 +112,7 @@ def init_db():
             ('Kevin Lee', 5, 'Midfielder', 7, 23, 'Nigerian', 174, 69, 'https://via.placeholder.com/100x100?text=KL'),
             ('James Taylor', 5, 'Defender', 5, 25, 'Nigerian', 183, 79, 'https://via.placeholder.com/100x100?text=JT')
         ]
-        cursor.executemany("INSERT INTO players (name, team_id, position, jersey_number, age, nationality, height, weight, photo_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", sample_players)
+        cursor.executemany("INSERT INTO players (name, team_id, position, jersey_number, age, nationality, height, weight, photo_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", sample_players)
         
         # Sample fixtures
         sample_fixtures = [
@@ -1192,7 +1192,7 @@ def api_delete_news(news_id):
         conn.close()
         return jsonify({'error': str(e)}), 500
 
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
+UPLOAD_FOLDER = '/opt/render/project/src/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -1220,7 +1220,7 @@ def upload_file():
 
 @app.route('/static/uploads/<filename>')
 def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    return send_from_directory('/opt/render/project/src/uploads', filename)
 
 if __name__ == '__main__':
     init_db()
