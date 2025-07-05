@@ -13,7 +13,8 @@ app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'fallback-secret-key')
 # Configure session for better persistence
 app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Allow cross-site cookies
+app.config['SESSION_COOKIE_DOMAIN'] = None  # Let Flask set the domain
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
 
 # Enable CORS for all routes
@@ -21,7 +22,8 @@ CORS(app,
      origins=["https://nufl.netlify.app", "http://localhost:5173", "http://localhost:3000"], 
      supports_credentials=True,
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-     allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
+     allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+     expose_headers=["Set-Cookie"])
 
 # Database path helper
 def get_db_path():
@@ -279,6 +281,7 @@ def api_login():
         session.permanent = True  # Make session permanent
         session['logged_in'] = True
         session['username'] = username
+        print(f"Login successful, session set: {dict(session)}")  # Debug print
         return jsonify({'success': True, 'message': 'Login successful', 'user': {'username': username}})
     else:
         return jsonify({'success': False, 'message': 'Invalid credentials'}), 401
@@ -290,6 +293,7 @@ def api_logout():
 
 @app.route('/api/check_auth')
 def api_check_auth():
+    print(f"Session contents: {dict(session)}")  # Debug print
     if 'logged_in' in session:
         return jsonify({'authenticated': True, 'user': {'username': session.get('username')}})
     else:
@@ -663,6 +667,7 @@ def api_get_player(player_id):
 
 @app.route('/api/players', methods=['POST'])
 def api_create_player():
+    print(f"Players POST - Session contents: {dict(session)}")  # Debug print
     if 'logged_in' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
