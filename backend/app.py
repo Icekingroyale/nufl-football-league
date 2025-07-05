@@ -278,23 +278,34 @@ def api_login():
     password = data.get('password')
     
     if username == 'admin' and password == 'admin123':
-        session.permanent = True  # Make session permanent
-        session['logged_in'] = True
+        # Generate a simple token
+        import hashlib
+        import time
+        token = hashlib.md5(f"{username}{time.time()}".encode()).hexdigest()
+        
+        # Store token in session
+        session['auth_token'] = token
         session['username'] = username
-        print(f"Login successful, session set: {dict(session)}")  # Debug print
-        return jsonify({'success': True, 'message': 'Login successful', 'user': {'username': username}})
+        print(f"Login successful, token generated: {token}")  # Debug print
+        return jsonify({
+            'success': True, 
+            'message': 'Login successful', 
+            'user': {'username': username},
+            'token': token
+        })
     else:
         return jsonify({'success': False, 'message': 'Invalid credentials'}), 401
 
 @app.route('/api/logout', methods=['POST'])
 def api_logout():
     session.clear()
+    print("Logout successful, session cleared")  # Debug print
     return jsonify({'success': True, 'message': 'Logout successful'})
 
 @app.route('/api/check_auth')
 def api_check_auth():
     print(f"Session contents: {dict(session)}")  # Debug print
-    if 'logged_in' in session:
+    if 'auth_token' in session:
         return jsonify({'authenticated': True, 'user': {'username': session.get('username')}})
     else:
         return jsonify({'authenticated': False}), 401
@@ -397,7 +408,7 @@ def api_fixtures():
 
 @app.route('/api/add_fixture', methods=['POST'])
 def api_add_fixture():
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
@@ -441,7 +452,7 @@ def api_add_fixture():
 
 @app.route('/api/update_result/<int:fixture_id>', methods=['POST'])
 def api_update_result(fixture_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
@@ -475,7 +486,7 @@ def api_update_result(fixture_id):
 
 @app.route('/api/stats')
 def api_stats():
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     conn = sqlite3.connect(get_db_path())
@@ -539,7 +550,7 @@ def api_get_team(team_id):
 
 @app.route('/api/teams', methods=['POST'])
 def api_create_team():
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
@@ -574,7 +585,7 @@ def api_create_team():
 
 @app.route('/api/teams/<int:team_id>', methods=['PUT'])
 def api_update_team(team_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
@@ -615,7 +626,7 @@ def api_update_team(team_id):
 
 @app.route('/api/teams/<int:team_id>', methods=['DELETE'])
 def api_delete_team(team_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     conn = sqlite3.connect(get_db_path())
@@ -668,7 +679,7 @@ def api_get_player(player_id):
 @app.route('/api/players', methods=['POST'])
 def api_create_player():
     print(f"Players POST - Session contents: {dict(session)}")  # Debug print
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
@@ -702,7 +713,7 @@ def api_create_player():
 
 @app.route('/api/players/<int:player_id>', methods=['PUT'])
 def api_update_player(player_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
@@ -742,7 +753,7 @@ def api_update_player(player_id):
 
 @app.route('/api/players/<int:player_id>', methods=['DELETE'])
 def api_delete_player(player_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     conn = sqlite3.connect(get_db_path())
@@ -816,7 +827,7 @@ def api_get_fixture(fixture_id):
 
 @app.route('/api/fixtures', methods=['POST'])
 def api_create_fixture():
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
@@ -847,7 +858,7 @@ def api_create_fixture():
 
 @app.route('/api/fixtures/<int:fixture_id>', methods=['PUT'])
 def api_update_fixture(fixture_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
@@ -884,7 +895,7 @@ def api_update_fixture(fixture_id):
 
 @app.route('/api/fixtures/<int:fixture_id>', methods=['DELETE'])
 def api_delete_fixture(fixture_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     conn = sqlite3.connect(get_db_path())
@@ -907,7 +918,7 @@ def api_delete_fixture(fixture_id):
 
 @app.route('/api/fixtures/<int:fixture_id>/result', methods=['POST'])
 def api_update_fixture_result(fixture_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
@@ -989,7 +1000,7 @@ def api_get_news(news_id):
 
 @app.route('/api/news', methods=['POST'])
 def api_create_news():
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
@@ -1021,7 +1032,7 @@ def api_create_news():
 
 @app.route('/api/news/<int:news_id>', methods=['PUT'])
 def api_update_news(news_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
@@ -1058,7 +1069,7 @@ def api_update_news(news_id):
 
 @app.route('/api/news/<int:news_id>', methods=['DELETE'])
 def api_delete_news(news_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     conn = sqlite3.connect(get_db_path())
