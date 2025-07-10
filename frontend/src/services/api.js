@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: 'https://nufl-football-league.onrender.com/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   withCredentials: true, // Enable credentials for admin authentication
   headers: {
     'Content-Type': 'application/json',

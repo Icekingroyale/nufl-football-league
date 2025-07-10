@@ -25,9 +25,17 @@ CORS(app,
      allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
      expose_headers=["Set-Cookie"])
 
+# Get config from environment variables for Railway compatibility
+DB_PATH = os.environ.get('DATABASE_URL', '/app/football_league.db')
+UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', '/app/uploads')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Ensure upload folder exists
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 # Database path helper
 def get_db_path():
-    return '/opt/render/project/src/football_league.db'
+    return DB_PATH
 
 # Database initialization
 def init_db():
@@ -1090,12 +1098,7 @@ def api_delete_news(news_id):
         conn.close()
         return jsonify({'error': str(e)}), 500
 
-UPLOAD_FOLDER = '/opt/render/project/src/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# Ensure upload folder exists
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -1118,7 +1121,7 @@ def upload_file():
 
 @app.route('/static/uploads/<filename>')
 def uploaded_file(filename):
-    return send_from_directory('/opt/render/project/src/uploads', filename)
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 try:
     init_db()
@@ -1126,7 +1129,5 @@ try:
 except Exception as e:
     print(f"Database initialization error: {e}")
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    print(f"Starting Flask app on port {port}")
-    app.run(host='0.0.0.0', port=port) 
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000))) 
