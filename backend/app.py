@@ -19,7 +19,7 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
 
 # Enable CORS for all routes
 CORS(app, 
-     origins=["https://nufl.netlify.app", "http://localhost:5173", "http://localhost:3000"], 
+     origins=["https://nufl.netlify.app", "http://localhost:5173", "http://localhost:3000", "https://*.choreo.dev"], 
      supports_credentials=True,
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
      allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
