@@ -1,0 +1,655 @@
+apiVersion: wso2.com/v1alpha1
+kind: Component
+metadata:
+  name: football-league-backend
+  annotations:
+    choreo.io/component-type: web
+    choreo.io/component-description: "Football League Backend API - Flask application providing REST API endpoints for teams, players, fixtures, news, and admin functionality"
+spec:
+  # Component type and runtime
+  type: web
+  runtime: python
+  version: "1.0.0"
+  
+  # Build configuration
+  build:
+    context: .
+    dockerfile: Dockerfile
+    ports:
+      - 8080
+  
+  # Environment variables
+  env:
+    - name: FLASK_APP
+      value: "app.py"
+    - name: FLASK_ENV
+      value: "production"
+    - name: PORT
+      value: "8080"
+    - name: SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: flask-secret-key
+          key: secret-key
+    - name: DATABASE_URL
+      value: "/app/football_league.db"
+    - name: UPLOAD_FOLDER
+      value: "/app/uploads"
+  
+  # Health check configuration
+  healthCheck:
+    httpGet:
+      path: /api/teams
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  
+  # Resource limits
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  
+  # API endpoints documentation
+  endpoints:
+    # Authentication endpoints
+    - path: /api/login
+      method: POST
+      description: "Admin login endpoint"
+      requestBody:
+        contentType: application/json
+        schema:
+          type: object
+          properties:
+            username:
+              type: string
+              description: "Admin username"
+            password:
+              type: string
+              description: "Admin password"
+      responses:
+        "200":
+          description: "Login successful"
+          contentType: application/json
+        "401":
+          description: "Invalid credentials"
+    
+    - path: /api/logout
+      method: POST
+      description: "Admin logout endpoint"
+      responses:
+        "200":
+          description: "Logout successful"
+    
+    - path: /api/check_auth
+      method: GET
+      description: "Check authentication status"
+      responses:
+        "200":
+          description: "User is authenticated"
+        "401":
+          description: "User is not authenticated"
+    
+    # Teams endpoints
+    - path: /api/teams
+      method: GET
+      description: "Get all teams"
+      responses:
+        "200":
+          description: "List of teams"
+          contentType: application/json
+    
+    - path: /api/teams
+      method: POST
+      description: "Create a new team"
+      requestBody:
+        contentType: application/json
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+              description: "Team name"
+            university:
+              type: string
+              description: "University name"
+            city:
+              type: string
+              description: "City"
+            founded:
+              type: integer
+              description: "Year founded"
+            coach:
+              type: string
+              description: "Coach name"
+            stadium:
+              type: string
+              description: "Stadium name"
+            logo_url:
+              type: string
+              description: "Logo URL"
+      responses:
+        "201":
+          description: "Team created successfully"
+        "400":
+          description: "Invalid data"
+    
+    - path: /api/teams/{id}
+      method: GET
+      description: "Get team by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Team details"
+        "404":
+          description: "Team not found"
+    
+    - path: /api/teams/{id}
+      method: PUT
+      description: "Update team by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        contentType: application/json
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+            university:
+              type: string
+            city:
+              type: string
+            founded:
+              type: integer
+            coach:
+              type: string
+            stadium:
+              type: string
+            logo_url:
+              type: string
+      responses:
+        "200":
+          description: "Team updated successfully"
+        "404":
+          description: "Team not found"
+    
+    - path: /api/teams/{id}
+      method: DELETE
+      description: "Delete team by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Team deleted successfully"
+        "404":
+          description: "Team not found"
+    
+    # Players endpoints
+    - path: /api/players
+      method: GET
+      description: "Get all players"
+      responses:
+        "200":
+          description: "List of players"
+          contentType: application/json
+    
+    - path: /api/players
+      method: POST
+      description: "Create a new player"
+      requestBody:
+        contentType: application/json
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+              description: "Player name"
+            team_id:
+              type: integer
+              description: "Team ID"
+            position:
+              type: string
+              description: "Player position"
+            jersey_number:
+              type: integer
+              description: "Jersey number"
+            age:
+              type: integer
+              description: "Player age"
+            nationality:
+              type: string
+              description: "Nationality"
+            height:
+              type: integer
+              description: "Height in cm"
+            weight:
+              type: integer
+              description: "Weight in kg"
+            photo_url:
+              type: string
+              description: "Photo URL"
+      responses:
+        "201":
+          description: "Player created successfully"
+        "400":
+          description: "Invalid data"
+    
+    - path: /api/players/{id}
+      method: GET
+      description: "Get player by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Player details"
+        "404":
+          description: "Player not found"
+    
+    - path: /api/players/{id}
+      method: PUT
+      description: "Update player by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        contentType: application/json
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+            team_id:
+              type: integer
+            position:
+              type: string
+            jersey_number:
+              type: integer
+            age:
+              type: integer
+            nationality:
+              type: string
+            height:
+              type: integer
+            weight:
+              type: integer
+            photo_url:
+              type: string
+      responses:
+        "200":
+          description: "Player updated successfully"
+        "404":
+          description: "Player not found"
+    
+    - path: /api/players/{id}
+      method: DELETE
+      description: "Delete player by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Player deleted successfully"
+        "404":
+          description: "Player not found"
+    
+    - path: /api/teams/{team_id}/players
+      method: GET
+      description: "Get players by team ID"
+      parameters:
+        - name: team_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "List of players for the team"
+        "404":
+          description: "Team not found"
+    
+    # Fixtures endpoints
+    - path: /api/fixtures
+      method: GET
+      description: "Get all fixtures"
+      responses:
+        "200":
+          description: "List of fixtures"
+          contentType: application/json
+    
+    - path: /api/fixtures
+      method: POST
+      description: "Create a new fixture"
+      requestBody:
+        contentType: application/json
+        schema:
+          type: object
+          properties:
+            home_team_id:
+              type: integer
+              description: "Home team ID"
+            away_team_id:
+              type: integer
+              description: "Away team ID"
+            date:
+              type: string
+              description: "Match date (YYYY-MM-DD)"
+            time:
+              type: string
+              description: "Match time (HH:MM)"
+            venue:
+              type: string
+              description: "Match venue"
+      responses:
+        "201":
+          description: "Fixture created successfully"
+        "400":
+          description: "Invalid data"
+    
+    - path: /api/fixtures/{id}
+      method: GET
+      description: "Get fixture by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Fixture details"
+        "404":
+          description: "Fixture not found"
+    
+    - path: /api/fixtures/{id}
+      method: PUT
+      description: "Update fixture by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        contentType: application/json
+        schema:
+          type: object
+          properties:
+            home_team_id:
+              type: integer
+            away_team_id:
+              type: integer
+            date:
+              type: string
+            time:
+              type: string
+            venue:
+              type: string
+            status:
+              type: string
+            home_score:
+              type: integer
+            away_score:
+              type: integer
+      responses:
+        "200":
+          description: "Fixture updated successfully"
+        "404":
+          description: "Fixture not found"
+    
+    - path: /api/fixtures/{id}
+      method: DELETE
+      description: "Delete fixture by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Fixture deleted successfully"
+        "404":
+          description: "Fixture not found"
+    
+    - path: /api/fixtures/{id}/result
+      method: POST
+      description: "Update fixture result"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        contentType: application/json
+        schema:
+          type: object
+          properties:
+            home_score:
+              type: integer
+              description: "Home team score"
+            away_score:
+              type: integer
+              description: "Away team score"
+      responses:
+        "200":
+          description: "Result updated successfully"
+        "404":
+          description: "Fixture not found"
+    
+    # News endpoints
+    - path: /api/news
+      method: GET
+      description: "Get all news articles"
+      responses:
+        "200":
+          description: "List of news articles"
+          contentType: application/json
+    
+    - path: /api/news
+      method: POST
+      description: "Create a new news article"
+      requestBody:
+        contentType: application/json
+        schema:
+          type: object
+          properties:
+            title:
+              type: string
+              description: "News title"
+            content:
+              type: string
+              description: "News content"
+            author:
+              type: string
+              description: "Author name"
+            category:
+              type: string
+              description: "News category"
+            image_url:
+              type: string
+              description: "Image URL"
+            published:
+              type: boolean
+              description: "Published status"
+      responses:
+        "201":
+          description: "News article created successfully"
+        "400":
+          description: "Invalid data"
+    
+    - path: /api/news/{id}
+      method: GET
+      description: "Get news article by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "News article details"
+        "404":
+          description: "News article not found"
+    
+    - path: /api/news/{id}
+      method: PUT
+      description: "Update news article by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        contentType: application/json
+        schema:
+          type: object
+          properties:
+            title:
+              type: string
+            content:
+              type: string
+            author:
+              type: string
+            category:
+              type: string
+            image_url:
+              type: string
+            published:
+              type: boolean
+      responses:
+        "200":
+          description: "News article updated successfully"
+        "404":
+          description: "News article not found"
+    
+    - path: /api/news/{id}
+      method: DELETE
+      description: "Delete news article by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "News article deleted successfully"
+        "404":
+          description: "News article not found"
+    
+    # League table and stats endpoints
+    - path: /api/league_table
+      method: GET
+      description: "Get league table standings"
+      responses:
+        "200":
+          description: "League table data"
+          contentType: application/json
+    
+    - path: /api/stats
+      method: GET
+      description: "Get league statistics"
+      responses:
+        "200":
+          description: "League statistics"
+          contentType: application/json
+    
+    # File upload endpoint
+    - path: /api/upload
+      method: POST
+      description: "Upload image files"
+      requestBody:
+        contentType: multipart/form-data
+        schema:
+          type: object
+          properties:
+            file:
+              type: string
+              format: binary
+              description: "Image file to upload"
+      responses:
+        "200":
+          description: "File uploaded successfully"
+          contentType: application/json
+        "400":
+          description: "Invalid file or no file provided"
+    
+    # Static file serving
+    - path: /static/uploads/{filename}
+      method: GET
+      description: "Serve uploaded files"
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "File content"
+          contentType: image/*
+        "404":
+          description: "File not found"
+  
+  # Secrets configuration
+  secrets:
+    - name: flask-secret-key
+      type: generic
+      data:
+        secret-key: "3ea78184a06afe408f5453819d35a60a942b6970fd98d1fd410aeed916d9b3fb"
+  
+  # Scaling configuration
+  scaling:
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 70
+  
+  # Networking
+  networking:
+    ingress:
+      enabled: true
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /
+      rules:
+        - host: football-league-backend.choreoapps.dev
+          http:
+            paths:
+              - path: /
+                pathType: Prefix
+                backend:
+                  service:
+                    name: football-league-backend
+                    port:
+                      number: 8080 
