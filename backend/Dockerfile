@@ -14,11 +14,11 @@ COPY . .
 # Create the uploads directory for Choreo
 RUN mkdir -p /app/uploads
 
-# Expose the port Flask runs on
-EXPOSE 5000
+# Expose the port the app runs on
+EXPOSE 8080
 
 # Set environment variables
 ENV FLASK_APP=app.py
 
 # Run the app with Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"] 
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"] 
