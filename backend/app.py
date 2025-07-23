@@ -25,12 +25,12 @@ CORS(app,
      allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
      expose_headers=["Set-Cookie"])
 
-# Get config from environment variables for Railway compatibility
-DB_PATH = os.environ.get('DATABASE_URL', '/app/football_league.db')
-UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', '/app/uploads')
+# Get config from environment variables for PythonAnywhere compatibility
+HOME_DIR = os.path.expanduser("~")
+APP_DIR = os.path.join(HOME_DIR, "nufl")  # Change 'nufl' to your actual project folder name on PythonAnywhere
+DB_PATH = os.environ.get('DATABASE_URL', os.path.join(APP_DIR, 'football_league.db'))
+UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join(APP_DIR, 'uploads'))
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# Ensure upload folder exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Database path helper
@@ -1114,14 +1114,16 @@ def upload_file():
         filename = file.filename  # You may want to use secure_filename in production
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
-        url = url_for('uploaded_file', filename=filename, _external=True)
+        # The URL below is for local/dev only. On PythonAnywhere, serve /uploads/ via static files mapping.
+        url = f"/uploads/{filename}"
         return jsonify({'url': url}), 201
     else:
         return jsonify({'error': 'Invalid file type'}), 400
 
-@app.route('/static/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+# REMOVE or comment out this route for PythonAnywhere static file serving
+# @app.route('/static/uploads/<filename>')
+# def uploaded_file(filename):
+#     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 try:
     init_db()
