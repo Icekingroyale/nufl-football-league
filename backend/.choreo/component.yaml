@@ -1,0 +1,40 @@
+apiVersion: wso2.com/v1alpha1
+kind: Component
+metadata:
+  name: football-league-backend
+  annotations:
+    choreo.io/component-type: web
+    choreo.io/component-description: "Football League Backend API - Flask application providing REST API endpoints for teams, players, fixtures, news, and admin functionality"
+spec:
+  componentType: web
+  source:
+    repository: .
+    directory: .
+  build:
+    dockerfile: Dockerfile
+  run:
+    command: ""
+  endpoints:
+    - name: http
+      port: 8080
+  env:
+    - name: FLASK_APP
+      value: app.py
+    - name: FLASK_ENV
+      value: production
+    - name: PORT
+      value: "8080"
+    - name: SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: flask-secret-key
+          key: secret-key
+    - name: DATABASE_URL
+      value: /app/football_league.db
+    - name: UPLOAD_FOLDER
+      value: /app/uploads
+  secrets:
+    - name: flask-secret-key
+      type: generic
+      data:
+        secret-key: "3ea78184a06afe408f5453819d35a60a942b6970fd98d1fd410aeed916d9b3fb" 

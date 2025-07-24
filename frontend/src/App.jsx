@@ -5,7 +5,7 @@ import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Fixtures from './components/Fixtures';
 import LeagueTable from './components/LeagueTable';
-import Teams from './components/Teams';
+import Teams from './pages/Teams';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -13,7 +13,6 @@ import Results from './pages/Results';
 import Tables from './pages/Tables';
 import Stats from './pages/Stats';
 import News from './pages/News';
-import Clubs from './pages/Clubs';
 import Players from './pages/Players';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
@@ -86,7 +85,7 @@ function App() {
             <Route path="/tables" element={<Tables />} />
             <Route path="/stats" element={<Stats />} />
             <Route path="/news" element={<News />} />
-            <Route path="/clubs" element={<Clubs />} />
+            <Route path="/clubs" element={<Teams />} />
             <Route path="/players" element={<Players />} />
             
             {/* Admin Routes */}

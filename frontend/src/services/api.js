@@ -2,8 +2,8 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
-  withCredentials: true, // Important for session-based auth
+  baseURL: import.meta.env.VITE_API_URL || '/api',
+  withCredentials: true, // Enable credentials for admin authentication
   headers: {
     'Content-Type': 'application/json',
   },
@@ -17,7 +17,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !error.config.url.includes('/check_auth')) {
       // Unauthorized - redirect to login
       localStorage.removeItem('authToken');
-      window.location.href = '/login';
+      window.location.href = '/admin/login';
     }
     return Promise.reject(error);
   }

@@ -1,18 +1,47 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, request, redirect, url_for, session, flash, jsonify, send_from_directory
 from flask_cors import CORS
 import sqlite3
 from datetime import datetime
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  # Change this in production
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'fallback-secret-key')
+
+# Configure session for better persistence
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Allow cross-site cookies
+app.config['SESSION_COOKIE_DOMAIN'] = None  # Let Flask set the domain
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
 
 # Enable CORS for all routes
-CORS(app, supports_credentials=True)
+CORS(app, 
+     origins=["https://nufl.netlify.app", "http://localhost:5173", "http://localhost:3000", "https://*.choreo.dev"], 
+     supports_credentials=True,
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+     expose_headers=["Set-Cookie"])
+
+# Get config from environment variables for PythonAnywhere compatibility
+HOME_DIR = os.path.expanduser("~")
+APP_DIR = os.path.join(HOME_DIR, "nufl")  # Change 'nufl' to your actual project folder name on PythonAnywhere
+DB_PATH = os.environ.get('DATABASE_URL', os.path.join(APP_DIR, 'football_league.db'))
+UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join(APP_DIR, 'uploads'))
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Database path helper
+def get_db_path():
+    return DB_PATH
 
 # Database initialization
 def init_db():
-    conn = sqlite3.connect('football_league.db')
+    # Use persistent storage path on Render
+    db_path = get_db_path()
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
     # Drop existing tables to recreate with new schema
@@ -136,7 +165,8 @@ def init_db():
 
 # Helper function to get league table
 def get_league_table():
-    conn = sqlite3.connect('football_league.db')
+    db_path = get_db_path()
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
     cursor.execute("SELECT id, name FROM teams")
@@ -194,190 +224,54 @@ def get_league_table():
 # Routes
 @app.route('/')
 def index():
-    if 'logged_in' not in session:
-        return redirect(url_for('login'))
-    
-    conn = sqlite3.connect('football_league.db')
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT f.id, t1.name as home_team, t2.name as away_team, f.date, f.home_score, f.away_score, f.status
-        FROM fixtures f
-        JOIN teams t1 ON f.home_team_id = t1.id
-        JOIN teams t2 ON f.away_team_id = t2.id
-        ORDER BY f.date DESC
-        LIMIT 5
-    """)
-    recent_fixtures = cursor.fetchall()
-    
-    league_table = get_league_table()
-    
-    conn.close()
-    
-    return render_template('index.html', recent_fixtures=recent_fixtures, league_table=league_table)
+    return jsonify({
+        'message': 'NUFL Football League API',
+        'status': 'running',
+        'endpoints': {
+            'players': '/api/players',
+            'teams': '/api/teams',
+            'fixtures': '/api/fixtures',
+            'news': '/api/news',
+            'league_table': '/api/league_table'
+        }
+    })
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        
-        if username == 'admin' and password == 'admin123':
-            session['logged_in'] = True
-            session['username'] = username
-            flash('Login successful!', 'success')
-            return redirect(url_for('index'))
-        else:
-            flash('Invalid credentials!', 'error')
-    
-    return render_template('login.html')
+    return jsonify({
+        'message': 'This is an API-only backend. Use the frontend for login.',
+        'frontend_url': 'https://your-frontend-url.com'
+    })
 
 @app.route('/logout')
 def logout():
-    session.clear()
-    flash('Logged out successfully!', 'success')
-    return redirect(url_for('login'))
+    return jsonify({
+        'message': 'This is an API-only backend. Use the frontend for logout.'
+    })
 
 @app.route('/teams')
 def teams():
-    if 'logged_in' not in session:
-        return redirect(url_for('login'))
-    
-    conn = sqlite3.connect('football_league.db')
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT t.id, t.name, t.city, t.founded, COUNT(p.id) as player_count
-        FROM teams t
-        LEFT JOIN players p ON t.id = p.team_id
-        GROUP BY t.id
-        ORDER BY t.name
-    """)
-    teams = cursor.fetchall()
-    
-    conn.close()
-    
-    return render_template('teams.html', teams=teams)
+    return redirect('/api/teams')
 
 @app.route('/players')
 def players():
-    if 'logged_in' not in session:
-        return redirect(url_for('login'))
-    
-    conn = sqlite3.connect('football_league.db')
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT p.id, p.name, t.name as team_name, p.position, p.jersey_number
-        FROM players p
-        LEFT JOIN teams t ON p.team_id = t.id
-        ORDER BY t.name, p.name
-    """)
-    players = cursor.fetchall()
-    
-    conn.close()
-    
-    return render_template('players.html', players=players)
+    return redirect('/api/players')
 
 @app.route('/fixtures')
 def fixtures():
-    if 'logged_in' not in session:
-        return redirect(url_for('login'))
-    
-    conn = sqlite3.connect('football_league.db')
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT f.id, t1.name as home_team, t2.name as away_team, f.date, f.home_score, f.away_score, f.status
-        FROM fixtures f
-        JOIN teams t1 ON f.home_team_id = t1.id
-        JOIN teams t2 ON f.away_team_id = t2.id
-        ORDER BY f.date DESC
-    """)
-    fixtures = cursor.fetchall()
-    
-    conn.close()
-    
-    return render_template('fixtures.html', fixtures=fixtures)
+    return redirect('/api/fixtures')
 
 @app.route('/add_fixture', methods=['GET', 'POST'])
 def add_fixture():
-    if 'logged_in' not in session:
-        return redirect(url_for('login'))
-    
-    if request.method == 'POST':
-        home_team_id = request.form['home_team_id']
-        away_team_id = request.form['away_team_id']
-        match_date = request.form['match_date']
-        
-        if home_team_id == away_team_id:
-            flash('Home and away teams cannot be the same!', 'error')
-        else:
-            conn = sqlite3.connect('football_league.db')
-            cursor = conn.cursor()
-            
-            cursor.execute("""
-                INSERT INTO fixtures (home_team_id, away_team_id, date, status)
-                VALUES (?, ?, ?, 'scheduled')
-            """, (home_team_id, away_team_id, match_date))
-            
-            conn.commit()
-            conn.close()
-            
-            flash('Fixture added successfully!', 'success')
-            return redirect(url_for('fixtures'))
-    
-    conn = sqlite3.connect('football_league.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name FROM teams ORDER BY name")
-    teams = cursor.fetchall()
-    conn.close()
-    
-    return render_template('add_fixture.html', teams=teams)
+    return jsonify({
+        'message': 'Use POST /api/fixtures to add a new fixture.'
+    })
 
 @app.route('/update_result/<int:fixture_id>', methods=['GET', 'POST'])
 def update_result(fixture_id):
-    if 'logged_in' not in session:
-        return redirect(url_for('login'))
-    
-    if request.method == 'POST':
-        home_score = request.form['home_score']
-        away_score = request.form['away_score']
-        
-        conn = sqlite3.connect('football_league.db')
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            UPDATE fixtures 
-            SET home_score = ?, away_score = ?, status = 'completed'
-            WHERE id = ?
-        """, (home_score, away_score, fixture_id))
-        
-        conn.commit()
-        conn.close()
-        
-        flash('Result updated successfully!', 'success')
-        return redirect(url_for('fixtures'))
-    
-    conn = sqlite3.connect('football_league.db')
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT f.id, t1.name as home_team, t2.name as away_team, f.date, f.home_score, f.away_score
-        FROM fixtures f
-        JOIN teams t1 ON f.home_team_id = t1.id
-        JOIN teams t2 ON f.away_team_id = t2.id
-        WHERE f.id = ?
-    """, (fixture_id,))
-    
-    fixture = cursor.fetchone()
-    conn.close()
-    
-    if not fixture:
-        flash('Fixture not found!', 'error')
-        return redirect(url_for('fixtures'))
-    
-    return render_template('update_result.html', fixture=fixture)
+    return jsonify({
+        'message': f'Use POST /api/fixtures/{fixture_id}/result to update fixture result.'
+    })
 
 @app.route('/api/league_table')
 def api_league_table():
@@ -392,27 +286,41 @@ def api_login():
     password = data.get('password')
     
     if username == 'admin' and password == 'admin123':
-        session['logged_in'] = True
+        # Generate a simple token
+        import hashlib
+        import time
+        token = hashlib.md5(f"{username}{time.time()}".encode()).hexdigest()
+        
+        # Store token in session
+        session['auth_token'] = token
         session['username'] = username
-        return jsonify({'success': True, 'message': 'Login successful', 'user': {'username': username}})
+        print(f"Login successful, token generated: {token}")  # Debug print
+        return jsonify({
+            'success': True, 
+            'message': 'Login successful', 
+            'user': {'username': username},
+            'token': token
+        })
     else:
         return jsonify({'success': False, 'message': 'Invalid credentials'}), 401
 
 @app.route('/api/logout', methods=['POST'])
 def api_logout():
     session.clear()
+    print("Logout successful, session cleared")  # Debug print
     return jsonify({'success': True, 'message': 'Logout successful'})
 
 @app.route('/api/check_auth')
 def api_check_auth():
-    if 'logged_in' in session:
+    print(f"Session contents: {dict(session)}")  # Debug print
+    if 'auth_token' in session:
         return jsonify({'authenticated': True, 'user': {'username': session.get('username')}})
     else:
         return jsonify({'authenticated': False}), 401
 
 @app.route('/api/teams')
 def api_teams():
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     cursor.execute("""
@@ -443,7 +351,7 @@ def api_teams():
 
 @app.route('/api/players')
 def api_players():
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     cursor.execute("""
@@ -476,7 +384,7 @@ def api_players():
 
 @app.route('/api/fixtures')
 def api_fixtures():
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     cursor.execute("""
@@ -508,7 +416,7 @@ def api_fixtures():
 
 @app.route('/api/add_fixture', methods=['POST'])
 def api_add_fixture():
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
@@ -522,7 +430,7 @@ def api_add_fixture():
     if home_team_name == away_team_name:
         return jsonify({'error': 'Home and away teams cannot be the same'}), 400
     
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     # Get team IDs
@@ -552,7 +460,7 @@ def api_add_fixture():
 
 @app.route('/api/update_result/<int:fixture_id>', methods=['POST'])
 def api_update_result(fixture_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
@@ -562,7 +470,7 @@ def api_update_result(fixture_id):
     if home_score is None or away_score is None:
         return jsonify({'error': 'Missing score data'}), 400
     
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     try:
@@ -586,10 +494,10 @@ def api_update_result(fixture_id):
 
 @app.route('/api/stats')
 def api_stats():
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     # Get total teams
@@ -627,7 +535,7 @@ def api_stats():
 # Teams CRUD API endpoints
 @app.route('/api/teams/<int:team_id>', methods=['GET'])
 def api_get_team(team_id):
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     cursor.execute("SELECT * FROM teams WHERE id = ?", (team_id,))
@@ -650,12 +558,12 @@ def api_get_team(team_id):
 
 @app.route('/api/teams', methods=['POST'])
 def api_create_team():
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
     
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     try:
@@ -685,12 +593,12 @@ def api_create_team():
 
 @app.route('/api/teams/<int:team_id>', methods=['PUT'])
 def api_update_team(team_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
     
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     try:
@@ -726,10 +634,10 @@ def api_update_team(team_id):
 
 @app.route('/api/teams/<int:team_id>', methods=['DELETE'])
 def api_delete_team(team_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     try:
@@ -753,7 +661,7 @@ def api_delete_team(team_id):
 # Players CRUD API endpoints
 @app.route('/api/players/<int:player_id>', methods=['GET'])
 def api_get_player(player_id):
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     cursor.execute("SELECT * FROM players WHERE id = ?", (player_id,))
@@ -778,12 +686,13 @@ def api_get_player(player_id):
 
 @app.route('/api/players', methods=['POST'])
 def api_create_player():
-    if 'logged_in' not in session:
+    print(f"Players POST - Session contents: {dict(session)}")  # Debug print
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
     
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     try:
@@ -812,12 +721,12 @@ def api_create_player():
 
 @app.route('/api/players/<int:player_id>', methods=['PUT'])
 def api_update_player(player_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
     
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     try:
@@ -852,10 +761,10 @@ def api_update_player(player_id):
 
 @app.route('/api/players/<int:player_id>', methods=['DELETE'])
 def api_delete_player(player_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     try:
@@ -875,7 +784,7 @@ def api_delete_player(player_id):
 
 @app.route('/api/teams/<int:team_id>/players', methods=['GET'])
 def api_get_players_by_team(team_id):
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     cursor.execute("SELECT * FROM players WHERE team_id = ?", (team_id,))
@@ -902,7 +811,7 @@ def api_get_players_by_team(team_id):
 # Fixtures CRUD API endpoints
 @app.route('/api/fixtures/<int:fixture_id>', methods=['GET'])
 def api_get_fixture(fixture_id):
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     cursor.execute("SELECT * FROM fixtures WHERE id = ?", (fixture_id,))
@@ -926,12 +835,12 @@ def api_get_fixture(fixture_id):
 
 @app.route('/api/fixtures', methods=['POST'])
 def api_create_fixture():
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
     
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     try:
@@ -957,12 +866,12 @@ def api_create_fixture():
 
 @app.route('/api/fixtures/<int:fixture_id>', methods=['PUT'])
 def api_update_fixture(fixture_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
     
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     try:
@@ -994,10 +903,10 @@ def api_update_fixture(fixture_id):
 
 @app.route('/api/fixtures/<int:fixture_id>', methods=['DELETE'])
 def api_delete_fixture(fixture_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     try:
@@ -1017,12 +926,12 @@ def api_delete_fixture(fixture_id):
 
 @app.route('/api/fixtures/<int:fixture_id>/result', methods=['POST'])
 def api_update_fixture_result(fixture_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
     
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     try:
@@ -1052,7 +961,7 @@ def api_update_fixture_result(fixture_id):
 # News CRUD API endpoints
 @app.route('/api/news', methods=['GET'])
 def api_get_all_news():
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     cursor.execute("SELECT * FROM news ORDER BY created_at DESC")
@@ -1076,7 +985,7 @@ def api_get_all_news():
 
 @app.route('/api/news/<int:news_id>', methods=['GET'])
 def api_get_news(news_id):
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     cursor.execute("SELECT * FROM news WHERE id = ?", (news_id,))
@@ -1099,12 +1008,12 @@ def api_get_news(news_id):
 
 @app.route('/api/news', methods=['POST'])
 def api_create_news():
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
     
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     try:
@@ -1131,12 +1040,12 @@ def api_create_news():
 
 @app.route('/api/news/<int:news_id>', methods=['PUT'])
 def api_update_news(news_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
     
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     try:
@@ -1168,10 +1077,10 @@ def api_update_news(news_id):
 
 @app.route('/api/news/<int:news_id>', methods=['DELETE'])
 def api_delete_news(news_id):
-    if 'logged_in' not in session:
+    if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    conn = sqlite3.connect('football_league.db')
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     try:
@@ -1189,6 +1098,38 @@ def api_delete_news(news_id):
         conn.close()
         return jsonify({'error': str(e)}), 500
 
-if __name__ == '__main__':
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/api/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    if file and allowed_file(file.filename):
+        filename = file.filename  # You may want to use secure_filename in production
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        # The URL below is for local/dev only. On PythonAnywhere, serve /uploads/ via static files mapping.
+        url = f"/uploads/{filename}"
+        return jsonify({'url': url}), 201
+    else:
+        return jsonify({'error': 'Invalid file type'}), 400
+
+# REMOVE or comment out this route for PythonAnywhere static file serving
+# @app.route('/static/uploads/<filename>')
+# def uploaded_file(filename):
+#     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+try:
     init_db()
-    app.run(debug=True, host='0.0.0.0', port=5000) 
+    print("Database initialized successfully")
+except Exception as e:
+    print(f"Database initialization error: {e}")
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000))) 

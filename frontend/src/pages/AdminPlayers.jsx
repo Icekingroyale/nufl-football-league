@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { playersAPI, teamsAPI } from '../services/api';
+import api from '../services/api';
 
 const AdminPlayers = () => {
   const [players, setPlayers] = useState([]);
@@ -106,6 +107,22 @@ const AdminPlayers = () => {
   const getTeamName = (teamId) => {
     const team = teams.find(t => t.id === teamId);
     return team ? team.name : 'Unknown Team';
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formDataImg = new FormData();
+    formDataImg.append('file', file);
+    try {
+      const response = await api.post('/upload', formDataImg, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setFormData({ ...formData, photo_url: response.data.url });
+    } catch (error) {
+      alert('Image upload failed.');
+      console.error(error);
+    }
   };
 
   if (loading) {
@@ -258,18 +275,24 @@ const AdminPlayers = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Photo URL
-                </label>
-                <input
-                  type="url"
-                  value={formData.photo_url}
-                  onChange={(e) => setFormData({...formData, photo_url: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="https://example.com/player-photo.jpg"
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Player Photo
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {formData.photo_url && (
+                    <img
+                      src={formData.photo_url}
+                      alt="Player Preview"
+                      className="mt-2 h-24 w-24 object-cover rounded-full border"
+                    />
+                  )}
+                </div>
               </div>
               <div className="flex space-x-4">
                 <button
