@@ -9,6 +9,20 @@ function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    async function fetchNews() {
+      try {
+        const response = await dataAPI.getNews();
+        setNews(response.data);
+      } catch (error) {
+        console.error('Error fetching news:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchNews();
+  }, []);
+
+  useEffect(() => {
     fetchHomeData();
   }, []);
 
@@ -26,34 +40,6 @@ function Home() {
       // Fetch league table
       const tableResponse = await dataAPI.getLeagueTable();
       setLeagueTable(tableResponse.data.slice(0, 10)); // Top 10 teams
-      
-      // Mock news data (in real app, this would come from API)
-      setNews([
-        {
-          id: 1,
-          title: "UNILAG Lions Dominate Opening Weekend",
-          excerpt: "The University of Lagos team showed exceptional form in their first match of the season...",
-          category: "Match Report",
-          date: "2024-01-15",
-          image: "https://via.placeholder.com/300x200/22c55e/ffffff?text=UNILAG+vs+UNN"
-        },
-        {
-          id: 2,
-          title: "Key Player Injury Update: Ahmed Musa",
-          excerpt: "University of Nigeria Nsukka's star striker faces 3-week recovery period...",
-          category: "Injury News",
-          date: "2024-01-14",
-          image: "https://via.placeholder.com/300x200/ef4444/ffffff?text=Injury+Update"
-        },
-        {
-          id: 3,
-          title: "Transfer Window: New Signings Announced",
-          excerpt: "Several universities have strengthened their squads with new talent...",
-          category: "Transfer News",
-          date: "2024-01-13",
-          image: "https://via.placeholder.com/300x200/3b82f6/ffffff?text=Transfer+News"
-        }
-      ]);
       
     } catch (error) {
       console.error('Error fetching home data:', error);
@@ -120,7 +106,7 @@ function Home() {
                         <div className="flex items-center space-x-4">
                           <div className="text-center">
                             <img 
-                              src="https://via.placeholder.com/40x40/22c55e/ffffff?text=H" 
+                              src={match.home_logo || 'https://via.placeholder.com/40x40/22c55e/ffffff?text=H'} 
                               alt="Home Team"
                               className="w-10 h-10 rounded-full"
                             />
@@ -131,7 +117,7 @@ function Home() {
                           </div>
                           <div className="text-center">
                             <img 
-                              src="https://via.placeholder.com/40x40/3b82f6/ffffff?text=A" 
+                              src={match.away_logo || 'https://via.placeholder.com/40x40/3b82f6/ffffff?text=A'} 
                               alt="Away Team"
                               className="w-10 h-10 rounded-full"
                             />
@@ -169,7 +155,7 @@ function Home() {
               <div className="p-6">
                 <div className="space-y-2">
                   {leagueTable.map((team, index) => (
-                    <div key={team.id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                    <div key={team.team_id || team.id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                       <div className="flex items-center space-x-3">
                         <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                           index < 4 ? 'bg-green-100 text-green-800' : 
@@ -181,11 +167,11 @@ function Home() {
                         </span>
                         <div className="flex items-center space-x-2">
                           <img 
-                            src="https://via.placeholder.com/24x24/22c55e/ffffff?text=T" 
-                            alt={team.name}
+                            src={team.logo_url || 'https://via.placeholder.com/24x24/22c55e/ffffff?text=T'} 
+                            alt={team.team_name || team.name}
                             className="w-6 h-6 rounded-full"
                           />
-                          <span className="text-sm font-medium">{team.name}</span>
+                          <span className="text-sm font-medium">{team.team_name || team.name}</span>
                         </div>
                       </div>
                       <div className="text-right">
@@ -218,7 +204,7 @@ function Home() {
                 {news.map((article) => (
                   <div key={article.id} className="bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
                     <img 
-                      src={article.image} 
+                      src={article.image_url || 'https://via.placeholder.com/300x200?text=No+Image'} 
                       alt={article.title}
                       className="w-full h-48 object-cover"
                     />
@@ -229,18 +215,19 @@ function Home() {
                           article.category === 'Injury News' ? 'bg-red-100 text-red-800' :
                           'bg-blue-100 text-blue-800'
                         }`}>
-                          {article.category}
+                          {article.category || 'News'}
                         </span>
-                        <span className="text-xs text-gray-500">{article.date}</span>
+                        <span className="text-xs text-gray-500">{article.created_at ? article.created_at.split('T')[0] : ''}</span>
                       </div>
                       <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
                         {article.title}
                       </h3>
                       <p className="text-sm text-gray-600 line-clamp-3">
-                        {article.excerpt}
+                        {article.excerpt || article.content?.slice(0, 100) || ''}
                       </p>
                       <Link
-                        to={`/news/${article.id}`}
+                        to={`/news`}
+                        state={{ article }}
                         className="text-green-600 hover:text-green-700 font-semibold text-sm mt-2 inline-block"
                       >
                         Read More →

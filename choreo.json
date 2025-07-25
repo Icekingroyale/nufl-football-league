@@ -1,0 +1,46 @@
+{
+  "services": [
+    {
+      "name": "football-league-backend",
+      "type": "web",
+      "source": {
+        "repository": ".",
+        "directory": "backend"
+      },
+      "build": {
+        "dockerfile": "Dockerfile"
+      },
+      "env": {
+        "FLASK_APP": "app.py",
+        "FLASK_ENV": "production"
+      },
+      "ports": [
+        {
+          "port": 5000,
+          "protocol": "http"
+        }
+      ]
+    },
+    {
+      "name": "football-league-frontend",
+      "type": "web",
+      "source": {
+        "repository": ".",
+        "directory": "frontend"
+      },
+      "build": {
+        "command": "npm run build",
+        "output": "dist"
+      },
+      "env": {
+        "VITE_API_URL": "https://football-league-backend.choreo.dev"
+      },
+      "ports": [
+        {
+          "port": 80,
+          "protocol": "http"
+        }
+      ]
+    }
+  ]
+} 

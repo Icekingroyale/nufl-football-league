@@ -86,7 +86,7 @@ function Tables() {
                     Pos
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Club
+                    Teams
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Pl
@@ -119,7 +119,7 @@ function Tables() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {leagueTable.map((team, index) => (
-                  <tr key={team.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={team.team_id || team.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${getPositionColor(index + 1)}`}>
@@ -130,12 +130,12 @@ function Tables() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <img 
-                          src="https://via.placeholder.com/32x32/22c55e/ffffff?text=T" 
-                          alt={team.name}
+                          src={team.logo_url || 'https://via.placeholder.com/32x32/22c55e/ffffff?text=T'} 
+                          alt={team.team_name || team.name}
                           className="w-8 h-8 rounded-full mr-3"
                         />
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{team.name}</div>
+                          <div className="text-sm font-medium text-gray-900">{team.team_name || team.name}</div>
                           <div className="text-xs text-gray-500">{getPositionLabel(index + 1)}</div>
                         </div>
                       </div>
@@ -197,21 +197,21 @@ function Tables() {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Points:</span>
                 <div className="text-right">
-                  <div className="font-semibold">{leagueTable[0]?.name || 'N/A'}</div>
+                  <div className="font-semibold">{leagueTable[0]?.team_name || leagueTable[0]?.name || 'N/A'}</div>
                   <div className="text-xs text-gray-500">{leagueTable[0]?.points || 0} pts</div>
                 </div>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Goals For:</span>
                 <div className="text-right">
-                  <div className="font-semibold">{leagueTable[0]?.name || 'N/A'}</div>
+                  <div className="font-semibold">{leagueTable[0]?.team_name || leagueTable[0]?.name || 'N/A'}</div>
                   <div className="text-xs text-gray-500">{leagueTable[0]?.goals_for || 0} goals</div>
                 </div>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Goal Difference:</span>
                 <div className="text-right">
-                  <div className="font-semibold">{leagueTable[0]?.name || 'N/A'}</div>
+                  <div className="font-semibold">{leagueTable[0]?.team_name || leagueTable[0]?.name || 'N/A'}</div>
                   <div className="text-xs text-gray-500">+{leagueTable[0]?.goal_difference || 0}</div>
                 </div>
               </div>
@@ -257,7 +257,7 @@ function Tables() {
                 <span className="text-sm text-green-600">Champions League (1-4):</span>
                 <div className="text-right">
                   {leagueTable.slice(0, 4).map((team, i) => (
-                    <div key={i} className="text-xs text-gray-600">{i + 1}. {team.name}</div>
+                    <div key={i} className="text-xs text-gray-600">{i + 1}. {team.team_name || team.name}</div>
                   ))}
                 </div>
               </div>
@@ -265,7 +265,7 @@ function Tables() {
                 <span className="text-sm text-blue-600">Europa League (5-6):</span>
                 <div className="text-right">
                   {leagueTable.slice(4, 6).map((team, i) => (
-                    <div key={i} className="text-xs text-gray-600">{i + 5}. {team.name}</div>
+                    <div key={i} className="text-xs text-gray-600">{i + 5}. {team.team_name || team.name}</div>
                   ))}
                 </div>
               </div>
@@ -273,7 +273,7 @@ function Tables() {
                 <span className="text-sm text-red-600">Relegation:</span>
                 <div className="text-right">
                   {leagueTable.slice(-2).map((team, i) => (
-                    <div key={i} className="text-xs text-gray-600">{leagueTable.length - 1 + i}. {team.name}</div>
+                    <div key={i} className="text-xs text-gray-600">{leagueTable.length - 1 + i}. {team.team_name || team.name}</div>
                   ))}
                 </div>
               </div>
@@ -287,7 +287,7 @@ function Tables() {
                 <div key={team.id} className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <span className={`w-4 h-4 rounded-full ${getPositionColor(index + 1)}`}></span>
-                    <span className="text-sm font-medium">{team.name}</span>
+                    <span className="text-sm font-medium">{team.team_name || team.name}</span>
                   </div>
                   <div className="flex space-x-1">
                     {['W', 'W', 'D', 'L', 'W'].map((result, i) => (
