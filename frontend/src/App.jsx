@@ -85,7 +85,7 @@ function App() {
             <Route path="/tables" element={<Tables />} />
             <Route path="/stats" element={<Stats />} />
             <Route path="/news" element={<News />} />
-            <Route path="/clubs" element={<Teams />} />
+            <Route path="/teams" element={<Teams />} />
             <Route path="/players" element={<Players />} />
             
             {/* Admin Routes */}

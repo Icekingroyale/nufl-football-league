@@ -12,7 +12,7 @@ function Navbar({ isAuthenticated, onLogout }) {
     { name: 'Tables', path: '/tables' },
     { name: 'Stats', path: '/stats' },
     { name: 'News', path: '/news' },
-    { name: 'Clubs', path: '/clubs' },
+    { name: 'Teams', path: '/teams' },
     { name: 'Players', path: '/players' },
   ];
 
