@@ -18,7 +18,7 @@ def create_app():
     # Configure session for cross-origin cookies
     app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
     app.config['SESSION_COOKIE_HTTPONLY'] = True
-    app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Allow cross-site cookies
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Use 'Lax' for local development; 'None' for production
     app.config['SESSION_COOKIE_DOMAIN'] = None  # Let Flask set the domain
     app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
 

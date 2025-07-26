@@ -55,6 +55,7 @@ def get_team(team_id):
 
 @teams_bp.route('/teams', methods=['POST'])
 def create_team():
+    print('Session contents at team creation:', dict(session))
     if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     data = request.get_json()
