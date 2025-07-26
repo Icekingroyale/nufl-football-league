@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+    restart: unless-stopped
+    # Uncomment and configure these if you need a database
+    # depends_on:
+    #   - db
+    # environment:
+    #   - DATABASE_URL=postgresql://user:password@db:5432/dbname
+
+  # Uncomment and configure if you need a PostgreSQL database
+  # db:
+  #   image: postgres:13
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data/
+  #   environment:
+  #     - POSTGRES_USER=user
+  #     - POSTGRES_PASSWORD=password
+  #     - POSTGRES_DB=dbname
+
+# volumes:
+#   postgres_data:
