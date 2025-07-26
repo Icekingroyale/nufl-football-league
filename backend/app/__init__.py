@@ -15,10 +15,17 @@ def create_app():
     app.config['UPLOAD_FOLDER'] = uploads_dir
     app.secret_key = os.environ.get('SECRET_KEY', 'your-very-secret-key')
 
-    # Configure CORS for production - allow all origins temporarily for debugging
+    # Configure session for cross-origin cookies
+    app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Allow cross-site cookies
+    app.config['SESSION_COOKIE_DOMAIN'] = None  # Let Flask set the domain
+    app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
+
+    # Configure CORS for production - specify explicit origins for credentials
     CORS(app, 
          supports_credentials=True,
-         origins=['*'],  # Allow all origins temporarily
+         origins=['https://nufl.netlify.app', 'http://localhost:5173', 'http://localhost:3000'],
          allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
          expose_headers=['Set-Cookie'],
          methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
@@ -27,12 +34,17 @@ def create_app():
     @app.before_request
     def handle_preflight():
         if request.method == "OPTIONS":
-            response = make_response()
-            response.headers.add("Access-Control-Allow-Origin", "*")
-            response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Requested-With")
-            response.headers.add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
-            response.headers.add("Access-Control-Allow-Credentials", "true")
-            return response
+            origin = request.headers.get('Origin')
+            # Check if origin is allowed
+            allowed_origins = ['https://nufl.netlify.app', 'http://localhost:5173', 'http://localhost:3000']
+            if origin in allowed_origins:
+                response = make_response()
+                response.headers.add("Access-Control-Allow-Origin", origin)
+                response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Requested-With")
+                response.headers.add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+                response.headers.add("Access-Control-Allow-Credentials", "true")
+                response.headers.add("Access-Control-Max-Age", "3600")
+                return response
 
     # Register blueprints
     from .routes.teams import teams_bp

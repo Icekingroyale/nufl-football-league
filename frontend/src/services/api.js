@@ -18,10 +18,41 @@ const api = axios.create({
   },
 });
 
+// Request interceptor to log outgoing requests
+api.interceptors.request.use(
+  (config) => {
+    console.log('=== Outgoing Request ===');
+    console.log('URL:', config.url);
+    console.log('Method:', config.method);
+    console.log('Base URL:', config.baseURL);
+    console.log('Full URL:', config.baseURL + config.url);
+    console.log('Headers:', config.headers);
+    console.log('Data:', config.data);
+    console.log('With Credentials:', config.withCredentials);
+    return config;
+  },
+  (error) => {
+    console.error('Request error:', error);
+    return Promise.reject(error);
+  }
+);
+
 // Request interceptor to handle errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('=== Response Received ===');
+    console.log('Status:', response.status);
+    console.log('Data:', response.data);
+    console.log('Headers:', response.headers);
+    return response;
+  },
   (error) => {
+    console.log('=== Response Error ===');
+    console.log('Error:', error);
+    console.log('Response:', error.response);
+    console.log('Status:', error.response?.status);
+    console.log('Data:', error.response?.data);
+    
     // Don't redirect for check_auth endpoint as 401 is expected when not authenticated
     if (error.response?.status === 401 && !error.config.url.includes('/check_auth')) {
       // Unauthorized - redirect to login
