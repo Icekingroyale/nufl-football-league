@@ -1,6 +1,7 @@
 import os
 from flask import Flask, request, make_response
 from flask_cors import CORS
+from flask_session import Session
 
 # Import blueprints (to be created)
 def create_app():
@@ -14,6 +15,12 @@ def create_app():
     os.makedirs(uploads_dir, exist_ok=True)
     app.config['UPLOAD_FOLDER'] = uploads_dir
     app.secret_key = os.environ.get('SECRET_KEY', 'your-very-secret-key')
+
+    # Configure Flask-Session for filesystem-backed sessions
+    app.config['SESSION_TYPE'] = 'filesystem'
+    app.config['SESSION_FILE_DIR'] = os.path.join(db_dir, 'flask_session')
+    os.makedirs(app.config['SESSION_FILE_DIR'], exist_ok=True)
+    Session(app)
 
     # Configure session for cross-origin cookies
     app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS

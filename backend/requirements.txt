@@ -2,4 +2,5 @@ Flask
 Flask-CORS
 python-dotenv
 gunicorn
+Flask-Session
 
