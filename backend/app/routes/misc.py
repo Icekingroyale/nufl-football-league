@@ -18,6 +18,21 @@ def index():
         }
     })
 
+@misc_bp.route('/health')
+def health_check():
+    return jsonify({
+        'status': 'healthy',
+        'message': 'Backend is running',
+        'timestamp': '2024-07-26T00:00:00Z'
+    })
+
+@misc_bp.route('/test')
+def test_endpoint():
+    return jsonify({
+        'message': 'Test endpoint working',
+        'cors': 'Should work with preflight requests'
+    })
+
 @misc_bp.route('/teams')
 def teams_redirect():
     return redirect('/api/teams')
