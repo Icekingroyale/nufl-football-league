@@ -3,51 +3,60 @@ import sqlite3
 from datetime import datetime
 from ..models import get_db_connection
 
-news_bp = Blueprint('news', __name__, url_prefix='/api/news')
+news_bp = Blueprint('news', __name__, url_prefix='/api')
 
-@news_bp.route('', methods=['GET'])
-def get_all_news():
+@news_bp.route('/news', methods=['GET'])
+def get_news():
     conn = get_db_connection(current_app)
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM news ORDER BY created_at DESC")
-    news_items = cursor.fetchall()
+    cursor.execute("""
+        SELECT id, title, content, author, category, image_url, published, created_at
+        FROM news
+        WHERE published = 1
+        ORDER BY created_at DESC
+    """)
+    news = cursor.fetchall()
     conn.close()
     news_list = []
-    for item in news_items:
+    for article in news:
         news_list.append({
-            'id': item[0],
-            'title': item[1],
-            'content': item[2],
-            'author': item[3],
-            'category': item[4],
-            'image_url': item[5],
-            'published': bool(item[6]),
-            'created_at': item[7]
+            'id': article[0],
+            'title': article[1],
+            'content': article[2],
+            'author': article[3],
+            'category': article[4],
+            'image_url': article[5],
+            'published': article[6],
+            'created_at': article[7]
         })
     return jsonify(news_list)
 
-@news_bp.route('/<int:news_id>', methods=['GET'])
-def get_news(news_id):
+@news_bp.route('/news/<int:news_id>', methods=['GET'])
+def get_news_article(news_id):
     conn = get_db_connection(current_app)
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM news WHERE id = ?", (news_id,))
-    news_item = cursor.fetchone()
+    cursor.execute("""
+        SELECT id, title, content, author, category, image_url, published, created_at
+        FROM news
+        WHERE id = ? AND published = 1
+    """, (news_id,))
+    article = cursor.fetchone()
     conn.close()
-    if news_item:
+    if article:
         return jsonify({
-            'id': news_item[0],
-            'title': news_item[1],
-            'content': news_item[2],
-            'author': news_item[3],
-            'category': news_item[4],
-            'image_url': news_item[5],
-            'published': bool(news_item[6]),
-            'created_at': news_item[7]
+            'id': article[0],
+            'title': article[1],
+            'content': article[2],
+            'author': article[3],
+            'category': article[4],
+            'image_url': article[5],
+            'published': article[6],
+            'created_at': article[7]
         })
     else:
         return jsonify({'error': 'News article not found'}), 404
 
-@news_bp.route('', methods=['POST'])
+@news_bp.route('/news', methods=['POST'])
 def create_news():
     if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -61,10 +70,10 @@ def create_news():
         """, (
             data.get('title'),
             data.get('content'),
-            data.get('author'),
-            data.get('category'),
+            data.get('author', 'Admin'),
+            data.get('category', 'General'),
             data.get('image_url'),
-            data.get('published', True),
+            data.get('published', 1),
             datetime.now().isoformat()
         ))
         conn.commit()
@@ -75,7 +84,7 @@ def create_news():
         conn.close()
         return jsonify({'error': str(e)}), 500
 
-@news_bp.route('/<int:news_id>', methods=['PUT'])
+@news_bp.route('/news/<int:news_id>', methods=['PUT'])
 def update_news(news_id):
     if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -93,7 +102,7 @@ def update_news(news_id):
             data.get('author'),
             data.get('category'),
             data.get('image_url'),
-            data.get('published'),
+            data.get('published', 1),
             news_id
         ))
         if cursor.rowcount == 0:
@@ -106,7 +115,7 @@ def update_news(news_id):
         conn.close()
         return jsonify({'error': str(e)}), 500
 
-@news_bp.route('/<int:news_id>', methods=['DELETE'])
+@news_bp.route('/news/<int:news_id>', methods=['DELETE'])
 def delete_news(news_id):
     if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401

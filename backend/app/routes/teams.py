@@ -2,9 +2,9 @@ from flask import Blueprint, request, jsonify, current_app, session
 import sqlite3
 from ..models import get_db_connection
 
-teams_bp = Blueprint('teams', __name__, url_prefix='/api/teams')
+teams_bp = Blueprint('teams', __name__, url_prefix='/api')
 
-@teams_bp.route('', methods=['GET'])
+@teams_bp.route('/teams', methods=['GET'])
 def get_teams():
     conn = get_db_connection(current_app)
     cursor = conn.cursor()
@@ -32,7 +32,7 @@ def get_teams():
         })
     return jsonify(teams_list)
 
-@teams_bp.route('/<int:team_id>', methods=['GET'])
+@teams_bp.route('/teams/<int:team_id>', methods=['GET'])
 def get_team(team_id):
     conn = get_db_connection(current_app)
     cursor = conn.cursor()
@@ -53,7 +53,7 @@ def get_team(team_id):
     else:
         return jsonify({'error': 'Team not found'}), 404
 
-@teams_bp.route('', methods=['POST'])
+@teams_bp.route('/teams', methods=['POST'])
 def create_team():
     if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -84,7 +84,7 @@ def create_team():
         conn.close()
         return jsonify({'error': str(e)}), 500
 
-@teams_bp.route('/<int:team_id>', methods=['PUT'])
+@teams_bp.route('/teams/<int:team_id>', methods=['PUT'])
 def update_team(team_id):
     if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -119,7 +119,7 @@ def update_team(team_id):
         conn.close()
         return jsonify({'error': str(e)}), 500
 
-@teams_bp.route('/<int:team_id>', methods=['DELETE'])
+@teams_bp.route('/teams/<int:team_id>', methods=['DELETE'])
 def delete_team(team_id):
     if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -140,7 +140,7 @@ def delete_team(team_id):
         conn.close()
         return jsonify({'error': str(e)}), 500
 
-@teams_bp.route('/<int:team_id>/players', methods=['GET'])
+@teams_bp.route('/teams/<int:team_id>/players', methods=['GET'])
 def get_players_by_team(team_id):
     conn = get_db_connection(current_app)
     cursor = conn.cursor()

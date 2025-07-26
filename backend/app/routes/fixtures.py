@@ -2,15 +2,14 @@ from flask import Blueprint, request, jsonify, current_app, session
 import sqlite3
 from ..models import get_db_connection
 
-fixtures_bp = Blueprint('fixtures', __name__, url_prefix='/api/fixtures')
+fixtures_bp = Blueprint('fixtures', __name__, url_prefix='/api')
 
-@fixtures_bp.route('', methods=['GET'])
+@fixtures_bp.route('/fixtures', methods=['GET'])
 def get_fixtures():
     conn = get_db_connection(current_app)
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT f.id, t1.name as home_team, t1.logo_url as home_logo, t2.name as away_team, t2.logo_url as away_logo, f.date, f.time, f.venue, \
-               f.home_score, f.away_score, f.status
+        SELECT f.id, t1.name as home_team, t2.name as away_team, f.date, f.time, f.venue, f.home_score, f.away_score, f.status
         FROM fixtures f
         JOIN teams t1 ON f.home_team_id = t1.id
         JOIN teams t2 ON f.away_team_id = t2.id
@@ -23,68 +22,88 @@ def get_fixtures():
         fixtures_list.append({
             'id': fixture[0],
             'home_team': fixture[1],
-            'home_logo': fixture[2],
-            'away_team': fixture[3],
-            'away_logo': fixture[4],
-            'date': fixture[5],
-            'time': fixture[6],
-            'venue': fixture[7],
-            'home_score': fixture[8],
-            'away_score': fixture[9],
-            'status': fixture[10]
+            'away_team': fixture[2],
+            'date': fixture[3],
+            'time': fixture[4],
+            'venue': fixture[5],
+            'home_score': fixture[6],
+            'away_score': fixture[7],
+            'status': fixture[8]
         })
     return jsonify(fixtures_list)
 
-@fixtures_bp.route('/<int:fixture_id>', methods=['GET'])
+@fixtures_bp.route('/fixtures/<int:fixture_id>', methods=['GET'])
 def get_fixture(fixture_id):
     conn = get_db_connection(current_app)
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM fixtures WHERE id = ?", (fixture_id,))
+    cursor.execute("""
+        SELECT f.id, t1.name as home_team, t2.name as away_team, f.date, f.time, f.venue, f.home_score, f.away_score, f.status
+        FROM fixtures f
+        JOIN teams t1 ON f.home_team_id = t1.id
+        JOIN teams t2 ON f.away_team_id = t2.id
+        WHERE f.id = ?
+    """, (fixture_id,))
     fixture = cursor.fetchone()
     conn.close()
     if fixture:
         return jsonify({
             'id': fixture[0],
-            'home_team_id': fixture[1],
-            'away_team_id': fixture[2],
+            'home_team': fixture[1],
+            'away_team': fixture[2],
             'date': fixture[3],
-            'time': fixture[4] if len(fixture) > 4 else None,
-            'venue': fixture[5] if len(fixture) > 5 else None,
-            'status': fixture[6] if len(fixture) > 6 else 'scheduled',
-            'home_score': fixture[7] if len(fixture) > 7 else None,
-            'away_score': fixture[8] if len(fixture) > 8 else None
+            'time': fixture[4],
+            'venue': fixture[5],
+            'home_score': fixture[6],
+            'away_score': fixture[7],
+            'status': fixture[8]
         })
     else:
         return jsonify({'error': 'Fixture not found'}), 404
 
-@fixtures_bp.route('', methods=['POST'])
+@fixtures_bp.route('/fixtures', methods=['POST'])
 def create_fixture():
     if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     data = request.get_json()
+    home_team_name = data.get('home_team')
+    away_team_name = data.get('away_team')
+    match_date = data.get('match_date')
+    match_time = data.get('match_time', '15:00')
+    venue = data.get('venue', 'TBD')
+    
+    if not all([home_team_name, away_team_name, match_date]):
+        return jsonify({'error': 'Missing required fields'}), 400
+    
+    if home_team_name == away_team_name:
+        return jsonify({'error': 'Home and away teams cannot be the same'}), 400
+    
     conn = get_db_connection(current_app)
     cursor = conn.cursor()
+    
+    # Get team IDs
+    cursor.execute("SELECT id FROM teams WHERE name = ?", (home_team_name,))
+    home_team_id = cursor.fetchone()
+    cursor.execute("SELECT id FROM teams WHERE name = ?", (away_team_name,))
+    away_team_id = cursor.fetchone()
+    
+    if not home_team_id or not away_team_id:
+        conn.close()
+        return jsonify({'error': 'One or both teams not found'}), 404
+    
     try:
         cursor.execute("""
             INSERT INTO fixtures (home_team_id, away_team_id, date, time, venue, status)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (
-            data.get('home_team_id'),
-            data.get('away_team_id'),
-            data.get('date'),
-            data.get('time'),
-            data.get('venue'),
-            data.get('status', 'scheduled')
-        ))
+            VALUES (?, ?, ?, ?, ?, 'scheduled')
+        """, (home_team_id[0], away_team_id[0], match_date, match_time, venue))
         conn.commit()
         fixture_id = cursor.lastrowid
         conn.close()
-        return jsonify({'message': 'Fixture created successfully', 'id': fixture_id}), 201
+        return jsonify({'success': True, 'message': 'Fixture added successfully', 'id': fixture_id})
     except Exception as e:
         conn.close()
         return jsonify({'error': str(e)}), 500
 
-@fixtures_bp.route('/<int:fixture_id>', methods=['PUT'])
+@fixtures_bp.route('/fixtures/<int:fixture_id>', methods=['PUT'])
 def update_fixture(fixture_id):
     if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -94,11 +113,9 @@ def update_fixture(fixture_id):
     try:
         cursor.execute("""
             UPDATE fixtures 
-            SET home_team_id = ?, away_team_id = ?, date = ?, time = ?, venue = ?, status = ?
+            SET date = ?, time = ?, venue = ?, status = ?
             WHERE id = ?
         """, (
-            data.get('home_team_id'),
-            data.get('away_team_id'),
             data.get('date'),
             data.get('time'),
             data.get('venue'),
@@ -115,7 +132,7 @@ def update_fixture(fixture_id):
         conn.close()
         return jsonify({'error': str(e)}), 500
 
-@fixtures_bp.route('/<int:fixture_id>', methods=['DELETE'])
+@fixtures_bp.route('/fixtures/<int:fixture_id>', methods=['DELETE'])
 def delete_fixture(fixture_id):
     if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -133,30 +150,31 @@ def delete_fixture(fixture_id):
         conn.close()
         return jsonify({'error': str(e)}), 500
 
-@fixtures_bp.route('/<int:fixture_id>/result', methods=['POST'])
-def update_fixture_result(fixture_id):
+@fixtures_bp.route('/fixtures/<int:fixture_id>/result', methods=['POST'])
+def update_result(fixture_id):
     if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     data = request.get_json()
+    home_score = data.get('home_score')
+    away_score = data.get('away_score')
+    
+    if home_score is None or away_score is None:
+        return jsonify({'error': 'Missing score data'}), 400
+    
     conn = get_db_connection(current_app)
     cursor = conn.cursor()
     try:
         cursor.execute("""
             UPDATE fixtures 
-            SET home_score = ?, away_score = ?, status = ?
+            SET home_score = ?, away_score = ?, status = 'completed'
             WHERE id = ?
-        """, (
-            data.get('home_score'),
-            data.get('away_score'),
-            'completed',
-            fixture_id
-        ))
+        """, (home_score, away_score, fixture_id))
         if cursor.rowcount == 0:
             conn.close()
             return jsonify({'error': 'Fixture not found'}), 404
         conn.commit()
         conn.close()
-        return jsonify({'message': 'Fixture result updated successfully'})
+        return jsonify({'success': True, 'message': 'Result updated successfully'})
     except Exception as e:
         conn.close()
         return jsonify({'error': str(e)}), 500 
