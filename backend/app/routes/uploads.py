@@ -12,6 +12,8 @@ def allowed_file(filename):
 
 @uploads_bp.route('/upload', methods=['POST'])
 def upload_file():
+    from flask import session
+    print('Session contents at upload:', dict(session))
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
     

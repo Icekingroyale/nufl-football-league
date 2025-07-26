@@ -101,6 +101,7 @@ const AdminTeams = () => {
     try {
       const response = await api.post('/upload', formDataImg, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        withCredentials: true, // Explicitly ensure credentials are sent
       });
       setFormData({ ...formData, logo_url: response.data.url });
     } catch (error) {
