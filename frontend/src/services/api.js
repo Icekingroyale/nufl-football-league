@@ -1,5 +1,14 @@
 import axios from 'axios';
 
+
+// Add this at the top of your api.js file, right after the imports
+console.log('=== API Configuration Debug ===');
+console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
+console.log('Mode:', import.meta.env.MODE);
+console.log('All env vars:', import.meta.env);
+console.log('Final baseURL will be:', import.meta.env.VITE_API_URL || '/api');
+
+
 // Create axios instance with base configuration
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
