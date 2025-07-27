@@ -120,8 +120,8 @@ export const dataAPI = {
 
 // Actions API (legacy - keeping for compatibility)
 export const actionsAPI = {
-  addFixture: (fixtureData) => api.post('/add_fixture', fixtureData),
-  updateResult: (fixtureId, resultData) => api.post(`/update_result/${fixtureId}`, resultData),
+  addFixture: (fixtureData) => api.post('/fixtures', fixtureData),
+  updateResult: (fixture_id, resultData) => api.put(`/fixtures/${fixture_id}`, resultData),
 };
 
 export default api; 

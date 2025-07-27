@@ -27,6 +27,9 @@ const AdminFixtures = () => {
         fixturesAPI.getAllFixtures(),
         teamsAPI.getAllTeams()
       ]);
+      // console.log(teamsResponse);
+      // console.log(teamsResponse.data);
+      console.log(fixturesResponse.data)
       setFixtures(fixturesResponse.data);
       setTeams(teamsResponse.data);
     } catch (error) {
@@ -316,7 +319,7 @@ const AdminFixtures = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(fixture.status)}`}>
-                          {fixture.status.charAt(0).toUpperCase() + fixture.status.slice(1)}
+                          {fixture.status?.charAt(0).toUpperCase() + fixture.status?.slice(1)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

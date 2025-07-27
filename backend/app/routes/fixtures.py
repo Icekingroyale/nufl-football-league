@@ -9,7 +9,7 @@ def get_fixtures():
     conn = get_db_connection(current_app)
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT f.id, t1.name as home_team, t2.name as away_team, f.date, f.time, f.venue, f.home_score, f.away_score, f.status
+        SELECT f.id, t1.name as home_team, t2.name as away_team, f.home_team_id, f.away_team_id, f.date, f.time, f.venue, f.home_score, f.away_score, f.status
         FROM fixtures f
         JOIN teams t1 ON f.home_team_id = t1.id
         JOIN teams t2 ON f.away_team_id = t2.id
@@ -23,12 +23,14 @@ def get_fixtures():
             'id': fixture[0],
             'home_team': fixture[1],
             'away_team': fixture[2],
-            'date': fixture[3],
-            'time': fixture[4],
-            'venue': fixture[5],
-            'home_score': fixture[6],
-            'away_score': fixture[7],
-            'status': fixture[8]
+            'home_team_id': fixture[3],
+            'away_team_id': fixture[4],
+            'date': fixture[5],
+            'time': fixture[6],
+            'venue': fixture[7],
+            'home_score': fixture[8],
+            'away_score': fixture[9],
+            'status': fixture[10]
         })
     return jsonify(fixtures_list)
 
@@ -65,11 +67,16 @@ def create_fixture():
     if 'auth_token' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     data = request.get_json()
-    home_team_name = data.get('home_team')
-    away_team_name = data.get('away_team')
-    match_date = data.get('match_date')
-    match_time = data.get('match_time', '15:00')
+    print(data)
+    home_team_name = data.get('home_team_id')
+    away_team_name = data.get('away_team_id')
+    match_date = data.get('date')
+    match_time = data.get('time', '15:00')
     venue = data.get('venue', 'TBD')
+    status = data.get('status', 'scheduled')
+    home_score = data.get('home_score', 0)
+    away_score = data.get('away_score', 0)
+
     
     if not all([home_team_name, away_team_name, match_date]):
         return jsonify({'error': 'Missing required fields'}), 400
@@ -81,9 +88,9 @@ def create_fixture():
     cursor = conn.cursor()
     
     # Get team IDs
-    cursor.execute("SELECT id FROM teams WHERE name = ?", (home_team_name,))
+    cursor.execute("SELECT id FROM teams WHERE id = ?", (home_team_name,))
     home_team_id = cursor.fetchone()
-    cursor.execute("SELECT id FROM teams WHERE name = ?", (away_team_name,))
+    cursor.execute("SELECT id FROM teams WHERE id = ?", (away_team_name,))
     away_team_id = cursor.fetchone()
     
     if not home_team_id or not away_team_id:
@@ -92,9 +99,9 @@ def create_fixture():
     
     try:
         cursor.execute("""
-            INSERT INTO fixtures (home_team_id, away_team_id, date, time, venue, status)
-            VALUES (?, ?, ?, ?, ?, 'scheduled')
-        """, (home_team_id[0], away_team_id[0], match_date, match_time, venue))
+            INSERT INTO fixtures (home_team_id, away_team_id, date, time, venue, status, home_score, away_score)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (home_team_id[0], away_team_id[0], match_date, match_time, venue, status, home_score, away_score))
         conn.commit()
         fixture_id = cursor.lastrowid
         conn.close()

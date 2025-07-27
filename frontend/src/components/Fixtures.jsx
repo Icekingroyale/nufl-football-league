@@ -31,7 +31,7 @@ function Fixtures({ isAuthenticated = false }) {
       
       // Fetch teams for the form
       const teamsResponse = await dataAPI.getTeams();
-      setTeams(teamsResponse.data.map(team => team.name));
+      setTeams(teamsResponse.data);
       
     } catch (error) {
       console.error('Error fetching fixtures and teams:', error);
@@ -42,22 +42,35 @@ function Fixtures({ isAuthenticated = false }) {
   };
 
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  const handleTeamSelect = (e) => {
+    const { name, value, selectedIndex, options } = e.target;
+    const selectedOption = options[selectedIndex];
+    const teamId = selectedOption.getAttribute('data-id');
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+      [`${name}Id`]: teamId
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!formData.homeTeam || !formData.awayTeam || !formData.matchDate) {
-      alert('Please fill in all required fields');
+      // alert('Please fill in all required fields');
       return;
     }
 
     if (formData.homeTeam === formData.awayTeam) {
-      alert('Home and away teams cannot be the same');
+      // alert('Home and away teams cannot be the same');
       return;
     }
 
@@ -67,7 +80,14 @@ function Fixtures({ isAuthenticated = false }) {
       const fixtureData = {
         home_team: formData.homeTeam,
         away_team: formData.awayTeam,
-        match_date: formData.matchDate
+        date: formData.matchDate,
+        time: formData.matchTime,
+        venue: formData.venue,
+        status: formData.status,
+        home_team_id: formData.homeTeamId,
+        away_team_id: formData.awayTeamId,
+        home_score: formData.homeScore,
+        away_score: formData.awayScore
       };
 
       await actionsAPI.addFixture(fixtureData);
@@ -78,17 +98,22 @@ function Fixtures({ isAuthenticated = false }) {
         awayTeam: '',
         homeScore: '',
         awayScore: '',
-        matchDate: ''
+        matchDate: '',
+        matchTime: '',
+        venue: '',
+        status: '',
+        homeTeamId: '',
+        awayTeamId: ''
       });
       setShowAddForm(false);
       
       // Refresh fixtures list
       await fetchFixturesAndTeams();
       
-      alert('Fixture added successfully!');
+      // alert('Fixture added successfully!');
     } catch (error) {
       console.error('Error adding fixture:', error);
-      alert('Failed to add fixture. Please try again.');
+      // alert('Failed to add fixture. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -160,14 +185,14 @@ function Fixtures({ isAuthenticated = false }) {
                   id="homeTeam"
                   name="homeTeam"
                   value={formData.homeTeam}
-                  onChange={handleInputChange}
+                  onChange={handleTeamSelect}
                   required
                   disabled={submitting}
                   className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md disabled:opacity-50"
                 >
                   <option value="">Select Home Team</option>
                   {teams.map((team) => (
-                    <option key={team} value={team}>{team}</option>
+                    <option key={team.id} value={team.name} data-id={team.id}>{team.name}</option>
                   ))}
                 </select>
               </div>
@@ -180,14 +205,14 @@ function Fixtures({ isAuthenticated = false }) {
                   id="awayTeam"
                   name="awayTeam"
                   value={formData.awayTeam}
-                  onChange={handleInputChange}
+                  onChange={handleTeamSelect}
                   required
                   disabled={submitting}
                   className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md disabled:opacity-50"
                 >
                   <option value="">Select Away Team</option>
                   {teams.map((team) => (
-                    <option key={team} value={team}>{team}</option>
+                    <option key={team.id} value={team.name} data-id={team.id} >{team.name}</option>
                   ))}
                 </select>
               </div>
@@ -208,6 +233,59 @@ function Fixtures({ isAuthenticated = false }) {
                   disabled={submitting}
                   className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm disabled:opacity-50"
                 />
+              </div>
+
+              <div>
+                <label htmlFor="matchTime" className="block text-sm font-medium text-gray-700">
+                  Match Time
+                </label>
+                <input
+                  type="time"
+                  id="matchTime"
+                  name="matchTime"
+                  value={formData.matchTime}
+                  onChange={handleInputChange}
+                  required
+                  disabled={submitting}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm disabled:opacity-50"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="venue" className="block text-sm font-medium text-gray-700">
+                  Venue
+                </label>
+                <input
+                  type="text"
+                  id="venue"
+                  name="venue"
+                  value={formData.venue}
+                  onChange={handleInputChange}
+                  required
+                  disabled={submitting}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm disabled:opacity-50"
+                />
+              </div>  
+
+              <div>
+                <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+                  Status
+                </label>
+                <select
+                  id="status"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  required
+                  disabled={submitting}
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md disabled:opacity-50"
+                >
+                  <option value="">Select Status</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="live">Live</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
               </div>
 
               <div>
