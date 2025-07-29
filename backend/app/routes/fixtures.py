@@ -9,7 +9,20 @@ def get_fixtures():
     conn = get_db_connection(current_app)
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT f.id, t1.name as home_team, t2.name as away_team, f.home_team_id, f.away_team_id, f.date, f.time, f.venue, f.home_score, f.away_score, f.status
+        SELECT 
+            f.id, 
+            t1.name as home_team, 
+            t2.name as away_team, 
+            f.home_team_id, 
+            f.away_team_id, 
+            f.date, 
+            f.time, 
+            f.venue, 
+            f.home_score, 
+            f.away_score, 
+            f.status,
+            t1.logo_url as home_team_logo,
+            t2.logo_url as away_team_logo
         FROM fixtures f
         JOIN teams t1 ON f.home_team_id = t1.id
         JOIN teams t2 ON f.away_team_id = t2.id
@@ -30,7 +43,9 @@ def get_fixtures():
             'venue': fixture[7],
             'home_score': fixture[8],
             'away_score': fixture[9],
-            'status': fixture[10]
+            'status': fixture[10],
+            'home_team_logo': fixture[11],
+            'away_team_logo': fixture[12]
         })
     return jsonify(fixtures_list)
 

@@ -37,10 +37,10 @@ def test_endpoint():
 def league_table():
     conn = get_db_connection(current_app)
     cursor = conn.cursor()
-    cursor.execute("SELECT id, name FROM teams")
+    cursor.execute("SELECT id, name, logo_url FROM teams")
     teams = cursor.fetchall()
     league_table = []
-    for team_id, team_name in teams:
+    for team_id, team_name, logo_url in teams:
         cursor.execute("""
             SELECT 
                 SUM(CASE 
@@ -71,6 +71,7 @@ def league_table():
         goal_difference = goals_for - goals_against
         league_table.append({
             'team_name': team_name,
+            'logo_url': logo_url,
             'matches_played': matches_played,
             'points': points,
             'goals_for': goals_for,

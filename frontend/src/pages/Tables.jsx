@@ -13,6 +13,9 @@ function Tables() {
     try {
       setLoading(true);
       const response = await dataAPI.getLeagueTable();
+      console.log('League table data response:', response);
+      console.log('First team in league table:', response.data[0]);
+      console.log('Available team fields:', response.data[0] ? Object.keys(response.data[0]) : 'No data');
       setLeagueTable(response.data);
     } catch (error) {
       console.error('Error fetching league table:', error);
@@ -130,7 +133,7 @@ function Tables() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <img 
-                          src={team.logo_url || 'https://via.placeholder.com/32x32/22c55e/ffffff?text=T'} 
+                          src={team.logo_url} 
                           alt={team.team_name || team.name}
                           className="w-8 h-8 rounded-full mr-3"
                         />

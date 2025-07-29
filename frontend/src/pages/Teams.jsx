@@ -9,6 +9,7 @@ function Teams() {
     async function fetchTeams() {
       try {
         const response = await dataAPI.getTeams();
+        console.log('Teams data:', response.data);
         setTeams(response.data);
       } catch (error) {
         console.error('Error fetching teams:', error);

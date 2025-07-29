@@ -365,11 +365,11 @@ function Fixtures({ isAuthenticated = false }) {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  {isAuthenticated && (
+                  {/* {isAuthenticated && (
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
-                  )}
+                  )} */}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -381,7 +381,7 @@ function Fixtures({ isAuthenticated = false }) {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {fixture.match_date}
+                      {fixture.date}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {fixture.status === 'completed' ? (
@@ -395,7 +395,7 @@ function Fixtures({ isAuthenticated = false }) {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(fixture.status)}
                     </td>
-                    {isAuthenticated && (
+                    {/* {isAuthenticated && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         {fixture.status === 'scheduled' ? (
                           <button className="text-green-600 hover:text-green-900">
@@ -405,9 +405,9 @@ function Fixtures({ isAuthenticated = false }) {
                           <button className="text-blue-600 hover:text-blue-900">
                             Edit
                           </button>
-                        )}
-                      </td>
-                    )}
+                        )} */}
+                      {/* </td>
+                    )} */}
                   </tr>
                 ))}
               </tbody>

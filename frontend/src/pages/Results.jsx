@@ -109,79 +109,29 @@ function Results() {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-3 flex-1">
                         <img 
-                          src="https://via.placeholder.com/48x48/22c55e/ffffff?text=H" 
-                          alt="Home Team"
-                          className="w-12 h-12 rounded-full"
+                          src={match.home_team_logo || 'https://via.placeholder.com/48x48/22c55e/ffffff?text=H'} 
+                          alt={match.home_team}
+                          className="w-12 h-12 rounded-full object-cover"
                         />
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{match.home_team}</p>
-                          <p className="text-sm text-gray-500">Home</p>
-                        </div>
+                        <span className="font-medium">{match.home_team}</span>
                       </div>
-                      
-                      <div className="text-center mx-4">
-                        <div className="text-2xl font-bold text-gray-900">
-                          {match.home_score} - {match.away_score}
-                        </div>
-                        <div className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                          result.winner === 'home' ? 'bg-green-100 text-green-800' :
-                          result.winner === 'away' ? 'bg-red-100 text-red-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {result.winner === 'home' ? 'HOME WIN' :
-                           result.winner === 'away' ? 'AWAY WIN' : 'DRAW'}
-                        </div>
+                      <div className="mx-4 text-2xl font-bold">
+                        {match.home_score !== null ? match.home_score : '-'} - {match.away_score !== null ? match.away_score : '-'}
                       </div>
-
                       <div className="flex items-center space-x-3 flex-1 justify-end">
-                        <div className="flex-1 text-right">
-                          <p className="font-semibold text-gray-900">{match.away_team}</p>
-                          <p className="text-sm text-gray-500">Away</p>
-                        </div>
+                        <span className="font-medium">{match.away_team}</span>
                         <img 
-                          src="https://via.placeholder.com/48x48/3b82f6/ffffff?text=A" 
-                          alt="Away Team"
-                          className="w-12 h-12 rounded-full"
+                          src={match.away_team_logo || 'https://via.placeholder.com/48x48/22c55e/ffffff?text=A'} 
+                          alt={match.away_team}
+                          className="w-12 h-12 rounded-full object-cover"
                         />
                       </div>
                     </div>
 
-                    {/* Match Stats */}
-                    <div className="border-t pt-4">
-                      <div className="grid grid-cols-3 gap-4 text-center text-sm">
-                        <div>
-                          <div className="font-semibold text-gray-900">{match.home_score}</div>
-                          <div className="text-gray-500">Goals</div>
-                        </div>
-                        <div>
-                          <div className="font-semibold text-gray-900">-</div>
-                          <div className="text-gray-500">Assists</div>
-                        </div>
-                        <div>
-                          <div className="font-semibold text-gray-900">{match.away_score}</div>
-                          <div className="text-gray-500">Goals</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Match Highlights */}
-                    <div className="mt-4 pt-4 border-t">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-900">Highlights</span>
-                        <button className="text-green-600 hover:text-green-700 text-sm font-medium">
-                          Watch →
-                        </button>
-                      </div>
-                      <div className="mt-2 bg-gray-100 rounded-lg p-3">
-                        <div className="text-xs text-gray-600">
-                          {result.winner === 'home' ? 
-                            `${match.home_team} secured a ${match.home_score}-${match.away_score} victory over ${match.away_team}` :
-                           result.winner === 'away' ? 
-                            `${match.away_team} claimed a ${match.away_score}-${match.home_score} win against ${match.home_team}` :
-                            `${match.home_team} and ${match.away_team} played to a ${match.home_score}-${match.away_score} draw`
-                          }
-                        </div>
-                      </div>
+                    {/* Match Details */}
+                    <div className="text-center text-sm text-gray-500">
+                      <div>{match.venue}</div>
+                      <div>{match.time}</div>
                     </div>
                   </div>
                 </div>
@@ -190,88 +140,12 @@ function Results() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <div className="text-gray-500 text-lg">No results found for the selected matchweek.</div>
+            <p className="text-gray-500">No results found for the selected matchweek.</p>
           </div>
         )}
-
-        {/* Season Summary */}
-        <div className="mt-12">
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Season Summary</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">{results.length}</div>
-                <div className="text-sm text-gray-600">Matches Played</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">
-                  {results.reduce((sum, match) => sum + match.home_score + match.away_score, 0)}
-                </div>
-                <div className="text-sm text-gray-600">Total Goals</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-yellow-600">
-                  {results.filter(match => match.home_score === match.away_score).length}
-                </div>
-                <div className="text-sm text-gray-600">Draws</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600">
-                  {results.length > 0 ? 
-                    (results.reduce((sum, match) => sum + match.home_score + match.away_score, 0) / results.length).toFixed(1) : 
-                    '0.0'
-                  }
-                </div>
-                <div className="text-sm text-gray-600">Avg Goals/Match</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Form */}
-        <div className="mt-8">
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Recent Form</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {results.slice(-6).map((match) => {
-                const result = getMatchResult(match);
-                return (
-                  <div key={match.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <img 
-                        src="https://via.placeholder.com/32x32/22c55e/ffffff?text=H" 
-                        alt="Home Team"
-                        className="w-8 h-8 rounded-full"
-                      />
-                      <span className="text-sm font-medium">{match.home_team}</span>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-sm font-bold">{match.home_score} - {match.away_score}</div>
-                      <div className={`text-xs px-2 py-1 rounded-full ${
-                        result.winner === 'home' ? 'bg-green-100 text-green-800' :
-                        result.winner === 'away' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {result.result}
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <span className="text-sm font-medium">{match.away_team}</span>
-                      <img 
-                        src="https://via.placeholder.com/32x32/3b82f6/ffffff?text=A" 
-                        alt="Away Team"
-                        className="w-8 h-8 rounded-full"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
 }
 
-export default Results; 
+export default Results;
